@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener API Documentation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding: 30px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        margin: -20px -20px 40px -20px;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        opacity: 0.9;
+      }
+
+      .nav {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        border-left: 4px solid #667eea;
+      }
+
+      .nav h3 {
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+
+      .nav ul {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+
+      .nav a {
+        color: #495057;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        display: block;
+      }
+
+      .nav a:hover {
+        background: #667eea;
+        color: white;
+        transform: translateX(5px);
+      }
+
+      .section {
+        margin-bottom: 50px;
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #667eea;
+      }
+
+      .section h2 {
+        color: #667eea;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .endpoint {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #28a745;
+        transition: all 0.3s ease;
+      }
+
+      .endpoint:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .endpoint h3 {
+        color: #495057;
+        margin-bottom: 15px;
+        font-size: 1.3rem;
+      }
+
+      .method {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+        margin-right: 10px;
+      }
+
+      .get {
+        background: #28a745;
+        color: white;
+      }
+      .post {
+        background: #007bff;
+        color: white;
+      }
+      .put {
+        background: #ffc107;
+        color: black;
+      }
+      .delete {
+        background: #dc3545;
+        color: white;
+      }
+
+      .url {
+        font-family: "Courier New", monospace;
+        background: #e9ecef;
+        padding: 8px 12px;
+        border-radius: 5px;
+        margin: 10px 0;
+        word-break: break-all;
+      }
+
+      .code {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        margin: 15px 0;
+        overflow-x: auto;
+        border-left: 4px solid #667eea;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        background: #667eea;
+        color: white;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+      }
+
+      .auth-required {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        color: #856404;
+      }
+
+      .response-example {
+        background: #d1f2eb;
+        border: 1px solid #a3e4d7;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+      }
+
+      .response-example h4 {
+        color: #0e6655;
+        margin-bottom: 10px;
+      }
+
+      .test-case {
+        background: #e8f4f8;
+        border: 1px solid #bee5eb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+      }
+
+      .test-case h4 {
+        color: #0c5460;
+        margin-bottom: 10px;
+      }
+
+      .curl-command {
+        background: #1a1a1a;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        margin: 10px 0;
+        overflow-x: auto;
+        font-size: 0.9rem;
+      }
+
+      .parameter {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 5px 0;
+      }
+
+      .parameter strong {
+        color: #667eea;
+      }
+
+      .base-url {
+        background: #17a2b8;
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin-bottom: 30px;
+        font-family: "Courier New", monospace;
+        font-size: 1.1rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          padding: 15px;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .nav ul {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔗 URL Shortener API</h1>
+        <p>Complete REST API Documentation with JWT Authentication</p>
+      </div>
+
+      <div class="base-url">
+        <strong>Base URL:</strong> http://localhost:8080
+      </div>
+
+      <div class="nav">
+        <h3>📋 Table of Contents</h3>
+        <ul>
+          <li><a href="#authentication">🔐 Authentication</a></li>
+          <li><a href="#organizations">🏢 Organizations</a></li>
+          <li><a href="#urls">🔗 URL Management</a></li>
+          <li><a href="#redirect">🔄 URL Redirection</a></li>
+        </ul>
+      </div>
+
+      <!-- Authentication Section -->
+      <div class="section" id="authentication">
+        <h2>🔐 Authentication</h2>
+        <p>
+          All protected endpoints require JWT token in Authorization header:
+          <code>Bearer &lt;token&gt;</code>
+        </p>
+
+        <div class="endpoint">
+          <h3><span class="method post">POST</span> User Registration</h3>
+          <div class="url">/api/auth/signup</div>
+
+          <h4>Request Body:</h4>
+          <div class="code">
+            { "firstName": "John", "lastName": "Doe", "email":
+            "john.doe@example.com", "password": "password123" }
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Valid Registration</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/auth/signup \ -H
+              "Content-Type: application/json" \ -d '{ "firstName": "John",
+              "lastName": "Doe", "email": "john.doe@example.com", "password":
+              "password123" }'
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "User registered successfully",
+              "data": { "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "user": { "id": 1, "firstName": "John", "lastName": "Doe",
+              "email": "john.doe@example.com" } } }
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method post">POST</span> User Login</h3>
+          <div class="url">/api/auth/signin</div>
+
+          <h4>Request Body:</h4>
+          <div class="code">
+            { "email": "john.doe@example.com", "password": "password123" }
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Valid Login</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/auth/signin \ -H
+              "Content-Type: application/json" \ -d '{ "email":
+              "john.doe@example.com", "password": "password123" }'
+            </div>
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Invalid Credentials</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/auth/signin \ -H
+              "Content-Type: application/json" \ -d '{ "email":
+              "john.doe@example.com", "password": "wrongpassword" }'
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "Login successful", "data": {
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", "user": {
+              "id": 1, "firstName": "John", "lastName": "Doe", "email":
+              "john.doe@example.com" } } }
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Get Current User</h3>
+          <div class="url">/api/auth/me</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get Current User</h4>
+            <div class="curl-command">
+              curl -X GET http://localhost:8080/api/auth/me \ -H "Authorization:
+              Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "User retrieved successfully",
+              "data": { "id": 1, "firstName": "John", "lastName": "Doe",
+              "email": "john.doe@example.com", "createdAt":
+              "2025-01-01T00:00:00", "updatedAt": "2025-01-01T00:00:00" } }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Organizations Section -->
+      <div class="section" id="organizations">
+        <h2>🏢 Organization Management</h2>
+
+        <div class="endpoint">
+          <h3><span class="method post">POST</span> Create Organization</h3>
+          <div class="url">/api/organizations</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <h4>Request Body:</h4>
+          <div class="code">
+            { "name": "My Organization", "description": "Organization
+            description" }
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Create Organization</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/organizations \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN" \ -H "Content-Type:
+              application/json" \ -d '{ "name": "Tech Startup Inc",
+              "description": "Innovative technology solutions" }'
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "Organization created successfully",
+              "data": { "id": 1, "name": "Tech Startup Inc", "description":
+              "Innovative technology solutions", "createdAt":
+              "2025-01-01T00:00:00", "updatedAt": "2025-01-01T00:00:00" } }
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3>
+            <span class="method get">GET</span> Get User Organizations
+            (Paginated)
+          </h3>
+          <div class="url">/api/organizations</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <h4>Query Parameters:</h4>
+          <div class="parameter">
+            <strong>page</strong> (optional): Page number (default: 0)
+          </div>
+          <div class="parameter">
+            <strong>size</strong> (optional): Page size (default: 10)
+          </div>
+          <div class="parameter">
+            <strong>sortBy</strong> (optional): Sort field (default:
+            "createdAt")
+          </div>
+          <div class="parameter">
+            <strong>sortDir</strong> (optional): Sort direction (default:
+            "desc")
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get Organizations with Pagination</h4>
+            <div class="curl-command">
+              curl -X GET
+              "http://localhost:8080/api/organizations?page=0&size=5&sortBy=name&sortDir=asc"
+              \ -H "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "Organizations retrieved
+              successfully", "data": { "content": [ { "id": 1, "name": "Tech
+              Startup Inc", "description": "Innovative technology solutions",
+              "createdAt": "2025-01-01T00:00:00" } ], "pageable": {
+              "pageNumber": 0, "pageSize": 5 }, "totalElements": 1,
+              "totalPages": 1 } }
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Get Organization by ID</h3>
+          <div class="url">/api/organizations/{organizationId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get Organization Details</h4>
+            <div class="curl-command">
+              curl -X GET http://localhost:8080/api/organizations/1 \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method put">PUT</span> Update Organization</h3>
+          <div class="url">/api/organizations/{organizationId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <h4>Request Body:</h4>
+          <div class="code">
+            { "name": "Updated Organization Name", "description": "Updated
+            description" }
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Update Organization</h4>
+            <div class="curl-command">
+              curl -X PUT http://localhost:8080/api/organizations/1 \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN" \ -H "Content-Type:
+              application/json" \ -d '{ "name": "Updated Tech Startup",
+              "description": "Updated innovative solutions" }'
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method delete">DELETE</span> Delete Organization</h3>
+          <div class="url">/api/organizations/{organizationId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Delete Organization</h4>
+            <div class="curl-command">
+              curl -X DELETE http://localhost:8080/api/organizations/1 \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL Management Section -->
+      <div class="section" id="urls">
+        <h2>🔗 URL Management</h2>
+
+        <div class="endpoint">
+          <h3><span class="method post">POST</span> Create Short URL</h3>
+          <div class="url">/api/urls</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <h4>Request Body:</h4>
+          <div class="code">
+            { "originalUrl": "https://example.com/very-long-url",
+            "customShortCode": "my-custom-code", "organizationId": 1, "title":
+            "My URL Title", "description": "URL description" }
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Create Short URL</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/urls \ -H "Authorization:
+              Bearer YOUR_JWT_TOKEN" \ -H "Content-Type: application/json" \ -d
+              '{ "originalUrl": "https://www.google.com/search?q=spring+boot",
+              "customShortCode": "spring-search", "organizationId": 1, "title":
+              "Spring Boot Search", "description": "Google search for Spring
+              Boot" }'
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "Short URL created successfully",
+              "data": { "id": 1, "originalUrl":
+              "https://www.google.com/search?q=spring+boot", "shortCode":
+              "spring-search", "shortUrl":
+              "http://localhost:8080/s/spring-search", "title": "Spring Boot
+              Search", "description": "Google search for Spring Boot",
+              "clickCount": 0, "createdAt": "2025-01-01T00:00:00" } }
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Get URLs by Organization</h3>
+          <div class="url">/api/urls/organization/{organizationId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <h4>Query Parameters:</h4>
+          <div class="parameter">
+            <strong>page</strong> (optional): Page number (default: 0)
+          </div>
+          <div class="parameter">
+            <strong>size</strong> (optional): Page size (default: 10)
+          </div>
+          <div class="parameter">
+            <strong>sortBy</strong> (optional): Sort field (default:
+            "createdAt")
+          </div>
+          <div class="parameter">
+            <strong>sortDir</strong> (optional): Sort direction (default:
+            "desc")
+          </div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get Organization URLs</h4>
+            <div class="curl-command">
+              curl -X GET
+              "http://localhost:8080/api/urls/organization/1?page=0&size=10" \
+              -H "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Get User's URLs</h3>
+          <div class="url">/api/urls/my-urls</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get My URLs</h4>
+            <div class="curl-command">
+              curl -X GET
+              "http://localhost:8080/api/urls/my-urls?page=0&size=10" \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Get URL Details</h3>
+          <div class="url">/api/urls/{urlId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Get URL Details</h4>
+            <div class="curl-command">
+              curl -X GET http://localhost:8080/api/urls/1 \ -H "Authorization:
+              Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method put">PUT</span> Update URL</h3>
+          <div class="url">/api/urls/{urlId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Update URL</h4>
+            <div class="curl-command">
+              curl -X PUT http://localhost:8080/api/urls/1 \ -H "Authorization:
+              Bearer YOUR_JWT_TOKEN" \ -H "Content-Type: application/json" \ -d
+              '{ "originalUrl": "https://updated-example.com", "title": "Updated
+              Title" }'
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method delete">DELETE</span> Delete URL</h3>
+          <div class="url">/api/urls/{urlId}</div>
+          <div class="auth-required">🔒 Authentication Required</div>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Delete URL</h4>
+            <div class="curl-command">
+              curl -X DELETE http://localhost:8080/api/urls/1 \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN"
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL Redirection Section -->
+      <div class="section" id="redirect">
+        <h2>🔄 URL Redirection (Public)</h2>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Redirect to Original URL</h3>
+          <div class="url">/s/{shortCode}</div>
+          <p><strong>No Authentication Required</strong> - Public endpoint</p>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Access Short URL</h4>
+            <div class="curl-command">
+              curl -L http://localhost:8080/s/spring-search
+            </div>
+            <p><em>This will redirect (HTTP 301) to the original URL</em></p>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (301 Redirect)</h4>
+            <div class="code">
+              HTTP/1.1 301 Moved Permanently Location:
+              https://www.google.com/search?q=spring+boot
+            </div>
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3><span class="method get">GET</span> Preview URL</h3>
+          <div class="url">/api/public/preview/{shortCode}</div>
+          <p><strong>No Authentication Required</strong> - Public endpoint</p>
+
+          <div class="test-case">
+            <h4>🧪 Test Case - Preview URL</h4>
+            <div class="curl-command">
+              curl -X GET http://localhost:8080/api/public/preview/spring-search
+            </div>
+          </div>
+
+          <div class="response-example">
+            <h4>✅ Success Response (200)</h4>
+            <div class="code">
+              { "success": true, "message": "Preview URL", "data":
+              "https://www.google.com/search?q=spring+boot" }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error Responses Section -->
+      <div class="section">
+        <h2>❌ Common Error Responses</h2>
+
+        <div class="endpoint">
+          <h3>Authentication Error (401)</h3>
+          <div class="code">
+            { "success": false, "message": "Authentication required", "data":
+            null }
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3>Validation Error (400)</h3>
+          <div class="code">
+            { "success": false, "message": "Validation failed", "data": {
+            "errors": [ { "field": "email", "message": "Email is required" }, {
+            "field": "password", "message": "Password must be at least 8
+            characters" } ] } }
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3>Resource Not Found (404)</h3>
+          <div class="code">
+            { "success": false, "message": "Organization not found", "data":
+            null }
+          </div>
+        </div>
+
+        <div class="endpoint">
+          <h3>Access Denied (403)</h3>
+          <div class="code">
+            { "success": false, "message": "Access denied. Insufficient
+            permissions", "data": null }
+          </div>
+        </div>
+      </div>
+
+      <!-- Complete Test Scenario Section -->
+      <div class="section">
+        <h2>🧪 Complete Test Scenario</h2>
+
+        <div class="endpoint">
+          <h3>Complete User Journey</h3>
+          <div class="test-case">
+            <h4>Step 1: Register User</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/auth/signup \ -H
+              "Content-Type: application/json" \ -d '{ "firstName": "Alice",
+              "lastName": "Johnson", "email": "alice.johnson@example.com",
+              "password": "securepass123" }'
+            </div>
+          </div>
+
+          <div class="test-case">
+            <h4>Step 2: Login and Get Token</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/auth/signin \ -H
+              "Content-Type: application/json" \ -d '{ "email":
+              "alice.johnson@example.com", "password": "securepass123" }'
+            </div>
+          </div>
+
+          <div class="test-case">
+            <h4>Step 3: Create Organization</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/organizations \ -H
+              "Authorization: Bearer YOUR_JWT_TOKEN" \ -H "Content-Type:
+              application/json" \ -d '{ "name": "Alice Corp", "description": "My
+              business organization" }'
+            </div>
+          </div>
+
+          <div class="test-case">
+            <h4>Step 4: Create Short URL</h4>
+            <div class="curl-command">
+              curl -X POST http://localhost:8080/api/urls \ -H "Authorization:
+              Bearer YOUR_JWT_TOKEN" \ -H "Content-Type: application/json" \ -d
+              '{ "originalUrl":
+              "https://github.com/spring-projects/spring-boot",
+              "customShortCode": "spring-repo", "organizationId": 1,
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
