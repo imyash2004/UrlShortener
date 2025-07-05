@@ -1,49 +1,65 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
-import authService from '../services/authService';
-import organizationService from '../services/organizationService';
-import { useNavigate } from 'react-router-dom';
+import React, { createContext, useState, useEffect } from "react";
+import { jwtDecode } from "jwt-decode";
+import authService from "../services/authService";
+import organizationService from "../services/organizationService";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // Add loading state
   const navigate = useNavigate();
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      const decodedToken = jwtDecode(currentUser.token);
-      if (decodedToken.exp * 1000 > Date.now()) {
-        setUser(currentUser);
-      } else {
+    const initializeAuth = () => {
+      try {
+        const currentUser = authService.getCurrentUser();
+        if (currentUser && currentUser.token) {
+          const decodedToken = jwtDecode(currentUser.token);
+          if (decodedToken.exp * 1000 > Date.now()) {
+            setUser(currentUser);
+          } else {
+            // Token expired, clear it
+            authService.logout();
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
         authService.logout();
+        setUser(null);
+      } finally {
+        setLoading(false); // Mark loading as complete
       }
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (email, password) => {
     try {
       const userData = await authService.signin(email, password);
       setUser(userData);
-      
-      // This part is tricky because setUser is async.
-      // A better approach is to rely on the fact that authService.signin
-      // has already set the item in localStorage.
-      // The issue might be that authHeader() is called before the context updates.
-      // Let's try a direct approach.
-      
+
+      // Fetch organizations to determine navigation
       const response = await organizationService.getUserOrganizations();
       console.log("Fetched organizations:", response);
-      if (response && response.data && response.data.content && response.data.content.length > 0) {
-        navigate('/dashboard');
+      if (
+        response &&
+        response.data &&
+        response.data.content &&
+        response.data.content.length > 0
+      ) {
+        navigate("/dashboard");
       } else {
-        navigate('/create-organization');
+        navigate("/create-organization");
       }
       return userData;
     } catch (error) {
       console.error("Login failed in AuthContext", error);
-      // If login fails, we should not proceed.
       throw error;
     }
   };
@@ -51,14 +67,34 @@ const AuthProvider = ({ children }) => {
   const logout = () => {
     authService.logout();
     setUser(null);
+    navigate("/login");
   };
 
   const signup = (firstName, lastName, email, password) => {
     return authService.signup(firstName, lastName, email, password);
   };
 
+  // Don't render children until auth is initialized
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          color: "white",
+          fontSize: "1.2rem",
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup }}>
+    <AuthContext.Provider value={{ user, login, logout, signup, loading }}>
       {children}
     </AuthContext.Provider>
   );
