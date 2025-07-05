@@ -4,7 +4,7 @@ import authHeader from "./authHeader";
 const API_URL = "http://localhost:8080/api";
 
 const getUrls = (organizationId) => {
-  return axios.get(`${API_URL}/org/${organizationId}/urls`, {
+  return axios.get(`${API_URL}/urls/organization/${organizationId}`, {
     headers: authHeader(),
   });
 };
