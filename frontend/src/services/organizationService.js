@@ -1,16 +1,19 @@
-import axios from 'axios';
-import authHeader from './authHeader';
+import axios from "axios";
+import authHeader from "./authHeader";
+import config from "../config/config";
 
-const API_URL = 'http://localhost:8080/api/organizations';
+const API_URL = `${config.API_BASE_URL}${config.API_ENDPOINTS.ORGANIZATIONS}`;
 
 const createOrganization = (data) => {
   return axios.post(API_URL, data, { headers: authHeader() });
 };
 
 const getUserOrganizations = () => {
-  return axios.get(API_URL, {
-    headers: authHeader(),
-  }).then(response => response.data);
+  return axios
+    .get(API_URL, {
+      headers: authHeader(),
+    })
+    .then((response) => response.data);
 };
 
 const getOrganizationById = (id) => {

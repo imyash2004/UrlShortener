@@ -1,7 +1,8 @@
 import axios from "axios";
 import authHeader from "./authHeader";
+import config from '../config/config';
 
-const API_URL = "http://localhost:8080/api";
+const API_URL = `${config.API_BASE_URL}${config.API_ENDPOINTS.URLS}`;
 
 const getUrls = (organizationId) => {
   return axios.get(`${API_URL}/urls/organization/${organizationId}`, {
