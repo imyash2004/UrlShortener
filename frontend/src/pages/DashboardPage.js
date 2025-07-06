@@ -212,31 +212,66 @@ const DashboardPage = () => {
   const [totalUrls, setTotalUrls] = useState(0);
   const [totalOrganizations, setTotalOrganizations] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showCreateOrgModal, setShowCreateOrgModal] = useState(false);
   const [showCreateUrlModal, setShowCreateUrlModal] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const orgData = await organizationService.getUserOrganizations();
-        setOrganizations(orgData.data.content);
-        setTotalOrganizations(orgData.data.totalElements);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const orgData = await organizationService.getUserOrganizations();
+      console.log("Organization data received:", orgData);
 
-        const urlData = await urlService.getUrls(orgData.data.content[0].id);
-        setTotalUrls(urlData.data.totalElements);
+      // Handle the API response structure properly
+      if (orgData && orgData.success && orgData.data) {
+        const organizationsList = orgData.data.content || [];
+        setOrganizations(organizationsList);
+        setTotalOrganizations(orgData.data.totalElements || 0);
 
-        if (orgData.data.content.length === 0) {
-          setShowCreateOrgModal(true);
+        // If user has organizations, fetch URL count for the first one
+        if (organizationsList.length > 0) {
+          try {
+            const urlData = await urlService.getUrls(organizationsList[0].id);
+            if (urlData && urlData.success && urlData.data) {
+              setTotalUrls(urlData.data.totalElements || 0);
+            }
+          } catch (urlError) {
+            console.error("Error fetching URLs:", urlError);
+            setTotalUrls(0);
+          }
+        } else {
+          setTotalUrls(0);
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        console.error("Invalid organization data structure:", orgData);
+        setOrganizations([]);
+        setTotalOrganizations(0);
+        setTotalUrls(0);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError(
+        "Failed to load dashboard data. Please try refreshing the page."
+      );
+      setOrganizations([]);
+      setTotalOrganizations(0);
+      setTotalUrls(0);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchData();
   }, []);
+
+  // Show create organization modal when no organizations exist
+  useEffect(() => {
+    if (!loading && organizations.length === 0 && !showCreateOrgModal) {
+      setShowCreateOrgModal(true);
+    }
+  }, [loading, organizations.length, showCreateOrgModal]);
 
   const handleLogout = () => {
     logout();
@@ -279,7 +314,8 @@ const DashboardPage = () => {
   };
 
   const handleOrgCreated = (newOrg) => {
-    setOrganizations([...organizations, newOrg]);
+    // Refresh the data to get the updated organization list
+    fetchData();
     setShowCreateOrgModal(false);
   };
 
@@ -289,7 +325,23 @@ const DashboardPage = () => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div style={DashboardContainer}>
+        <div style={BackgroundPattern}></div>
+        <div style={ContentWrapper}>
+          <div
+            style={{
+              textAlign: "center",
+              color: "white",
+              fontSize: "1.5rem",
+              marginTop: "2rem",
+            }}
+          >
+            Loading dashboard...
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (showCreateOrgModal) {
@@ -297,6 +349,7 @@ const DashboardPage = () => {
       <CreateOrganizationModal
         onOrganizationCreated={handleOrgCreated}
         onClose={() => setShowCreateOrgModal(false)}
+        isRequired={organizations.length === 0}
       />
     );
   }
@@ -320,6 +373,40 @@ const DashboardPage = () => {
           </button>
         </header>
 
+        {error && (
+          <div
+            style={{
+              background: "rgba(255, 0, 0, 0.1)",
+              border: "1px solid rgba(255, 0, 0, 0.3)",
+              borderRadius: "10px",
+              padding: "1rem",
+              marginBottom: "2rem",
+              color: "#ff6b6b",
+              textAlign: "center",
+            }}
+          >
+            {error}
+            <button
+              style={{
+                marginLeft: "1rem",
+                padding: "0.5rem 1rem",
+                background: "#ff6b6b",
+                color: "white",
+                border: "none",
+                borderRadius: "5px",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                setError(null);
+                setLoading(true);
+                fetchData();
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
         {user && user.user && (
           <p style={WelcomeMessage}>
             Welcome back, {user.user.firstName} {user.user.lastName}! 👋
@@ -340,17 +427,61 @@ const DashboardPage = () => {
         <nav style={Nav}>
           <div style={NavGrid}>
             <div
-              style={NavCard}
-              onClick={() => handleNavigation("/organizations")}
-              onMouseEnter={handleCardHover}
-              onMouseLeave={handleCardLeave}
+              style={{
+                ...NavCard,
+                cursor: "default",
+                opacity: 0.9,
+              }}
             >
               <span style={NavIcon}>🏢</span>
-              <h3 style={NavTitle}>My Organizations</h3>
+              <h3 style={NavTitle}>
+                {organizations.length > 0
+                  ? organizations[0].name
+                  : "No Organization"}
+              </h3>
               <p style={NavDescription}>
-                Manage your organizations, invite team members, and collaborate
-                on URL campaigns
+                {organizations.length > 0
+                  ? organizations[0].description || "No description available"
+                  : "Create your first organization to get started"}
               </p>
+              {organizations.length > 0 && (
+                <div
+                  style={{
+                    marginTop: "1rem",
+                    fontSize: "0.9rem",
+                    color: "rgba(255, 255, 255, 0.8)",
+                  }}
+                >
+                  <div style={{ marginBottom: "0.5rem" }}>
+                    👥 Members: {organizations[0].memberCount || 0}
+                  </div>
+                  <div style={{ marginBottom: "0.5rem" }}>
+                    🔗 URLs: {organizations[0].urlCount || 0}
+                  </div>
+                  <div style={{ marginBottom: "0.5rem" }}>
+                    👑 Owner: {organizations[0].ownerName || "Unknown"}
+                  </div>
+                  <div>
+                    📅 Created:{" "}
+                    {organizations[0].createdAt
+                      ? new Date(
+                          organizations[0].createdAt
+                        ).toLocaleDateString()
+                      : "Unknown"}
+                  </div>
+                  {organizations.length > 1 && (
+                    <div
+                      style={{
+                        marginTop: "0.5rem",
+                        fontSize: "0.8rem",
+                        color: "rgba(255, 255, 255, 0.6)",
+                      }}
+                    >
+                      +{organizations.length - 1} more organizations
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div

@@ -44,19 +44,10 @@ const AuthProvider = ({ children }) => {
       const userData = await authService.signin(email, password);
       setUser(userData);
 
-      // Fetch organizations to determine navigation
-      const response = await organizationService.getUserOrganizations();
-      console.log("Fetched organizations:", response);
-      if (
-        response &&
-        response.data &&
-        response.data.content &&
-        response.data.content.length > 0
-      ) {
+      // Always navigate to dashboard first
         navigate("/dashboard");
-      } else {
-        navigate("/create-organization");
-      }
+
+      // The dashboard will handle checking for organizations and showing the modal if needed
       return userData;
     } catch (error) {
       console.error("Login failed in AuthContext", error);

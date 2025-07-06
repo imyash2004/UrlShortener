@@ -1,5 +1,14 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Zap, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import organizationService from "../services/organizationService";
@@ -65,7 +74,9 @@ const LoginPage = () => {
       await login(email, password);
     } catch (error) {
       console.error("Login failed", error);
-      setMessage(error.message || "Login failed. Please check your credentials.");
+      setMessage(
+        error.message || "Login failed. Please check your credentials."
+      );
       setMessageType("error");
     } finally {
       setIsLoading(false);
@@ -216,12 +227,14 @@ const LoginPage = () => {
             <form onSubmit={handleLogin} className="space-y-6">
               {/* Message Display */}
               {message && (
-                <div className={`message-animate p-4 rounded-xl flex items-center space-x-2 ${
-                  messageType === 'success' 
-                    ? 'bg-green-500/20 border border-green-500/50 text-green-400' 
-                    : 'bg-red-500/20 border border-red-500/50 text-red-400'
-                }`}>
-                  {messageType === 'success' ? (
+                <div
+                  className={`message-animate p-4 rounded-xl flex items-center space-x-2 ${
+                    messageType === "success"
+                      ? "bg-green-500/20 border border-green-500/50 text-green-400"
+                      : "bg-red-500/20 border border-red-500/50 text-red-400"
+                  }`}
+                >
+                  {messageType === "success" ? (
                     <CheckCircle className="w-5 h-5" />
                   ) : (
                     <AlertCircle className="w-5 h-5" />
@@ -301,16 +314,6 @@ const LoginPage = () => {
                   )}
                 </div>
               </button>
-
-              {/* Forgot Password Link */}
-              <div className="text-center pt-2">
-                <Link
-                  to="/forgot-password"
-                  className="text-gray-400 hover:text-cyan-400 text-sm transition-colors"
-                >
-                  Forgot your password?
-                </Link>
-              </div>
 
               {/* Footer */}
               <div className="text-center pt-4 border-t border-gray-700/50">

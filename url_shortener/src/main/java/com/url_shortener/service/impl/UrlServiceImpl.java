@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,48 +48,66 @@ public class UrlServiceImpl implements UrlService {
 
             Organization organization = organizationService.findOrganizationEntity(request.getOrganizationId());
 
-            // Validate URL format
+            // Validate URL format - using both custom validation and @URL annotation validation
             if (!isValidUrl(request.getOriginalUrl())) {
                 return ApiResponse.error("Invalid URL format");
             }
 
-            // Generate or validate custom short code
-            String shortCode;
+            // Handle custom short code logic
+            String shortCode = null;
             if (request.getCustomShortCode() != null && !request.getCustomShortCode().trim().isEmpty()) {
                 shortCode = request.getCustomShortCode().trim();
+
+                // Check if custom short code already exists
                 if (urlRepository.existsByShortCode(shortCode)) {
                     return ApiResponse.error("Custom short code already exists");
                 }
+
+                // Validate custom short code format
                 if (!isValidShortCode(shortCode)) {
-                    return ApiResponse.error("Invalid short code format. Use only letters, numbers, and hyphens");
+                    return ApiResponse.error("Invalid short code format. Use only letters, numbers, and hyphens (3-20 characters)");
                 }
             } else {
+                // Generate random short code if no custom code provided
                 shortCode = generateUniqueShortCode();
             }
 
-            // Create URL entity
+            // Get the next URL ID within the organization
+            Long orgLevelUrlId = getNextUrlIdForOrganization(organization.getId());
+
+            // Create the short URL with format: /org-id/{url-id}
+            String shortUrl = baseUrl + "/" +shortCode+"/"+ organization.getId() + "/" + orgLevelUrlId;
+
+            // Create URL entity with all fields from request
             Url url = new Url();
             url.setOriginalUrl(request.getOriginalUrl());
             url.setShortCode(shortCode);
-            url.setTitle(request.getTitle());
-            url.setDescription(request.getDescription());
+            url.setShortUrl(shortUrl);
+
+            // Handle title - use provided title or empty string if null
+            url.setTitle(request.getTitle() != null ? request.getTitle().trim() : "");
+
+            // Handle description - use provided description or empty string if null
+            url.setDescription(request.getDescription() != null ? request.getDescription().trim() : "");
+
+            // Handle expiration date - use provided date or null (no expiration)
             url.setExpiresAt(request.getExpiresAt());
+
+            // Set system fields
             url.setCreatedBy(user);
             url.setOrganization(organization);
-            
-            // Generate random text prefix for the URL
-            String randomPrefix = generateRandomString();
-            
-            // Set a temporary short URL that will be updated after getting the ID
-            // We'll use a placeholder that includes the random prefix and org ID
-            url.setShortUrl(baseUrl + "/" + randomPrefix + "/" + organization.getId() + "/temp");
+            url.setActive(true);
+            url.setClickCount(0L);
+            url.setCreatedAt(LocalDateTime.now());
 
+            // Validate expiration date if provided
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Expiration date cannot be in the past");
+            }
+
+            // Save the URL entity
             Url savedUrl = urlRepository.save(url);
-            
-            // Update the short URL with the actual URL ID
-            savedUrl.setShortUrl(baseUrl + "/" + randomPrefix + "/" + organization.getId() + "/" + savedUrl.getId());
-            savedUrl = urlRepository.save(savedUrl);
-            
+
             UrlResponse response = mapToResponse(savedUrl);
 
             return ApiResponse.success("Short URL created successfully", response);
@@ -130,7 +149,11 @@ public class UrlServiceImpl implements UrlService {
     @Transactional
     public ApiResponse<String> redirectToOriginalUrlByOrgAndId(Long organizationId, Long urlId) {
         try {
-            Optional<Url> urlOptional = urlRepository.findByIdAndActiveTrue(urlId);
+            Organization organization = organizationService.findOrganizationEntity(organizationId);
+
+            // Find the URL by matching the short URL pattern
+            String expectedShortUrl = baseUrl + "/" + organizationId + "/" + urlId;
+            Optional<Url> urlOptional = urlRepository.findByShortUrlAndActiveTrue(expectedShortUrl);
 
             if (urlOptional.isEmpty()) {
                 return ApiResponse.error("Short URL not found");
@@ -138,7 +161,7 @@ public class UrlServiceImpl implements UrlService {
 
             Url url = urlOptional.get();
 
-            // Verify the URL belongs to the specified organization
+            // Verify organization matches (additional security check)
             if (!url.getOrganization().getId().equals(organizationId)) {
                 return ApiResponse.error("Short URL not found");
             }
@@ -162,41 +185,9 @@ public class UrlServiceImpl implements UrlService {
     @Override
     @Transactional
     public ApiResponse<String> redirectToOriginalUrlByRandomPrefixAndOrgAndId(String randomPrefix, Long organizationId, Long urlId) {
-        try {
-            Optional<Url> urlOptional = urlRepository.findByIdAndActiveTrue(urlId);
-
-            if (urlOptional.isEmpty()) {
-                return ApiResponse.error("Short URL not found");
-            }
-
-            Url url = urlOptional.get();
-
-            // Verify the URL belongs to the specified organization
-            if (!url.getOrganization().getId().equals(organizationId)) {
-                return ApiResponse.error("Short URL not found");
-            }
-
-            // Verify the random prefix matches (optional security check)
-            // You can remove this check if you want the random prefix to be purely cosmetic
-            String expectedPrefix = extractRandomPrefixFromShortUrl(url.getShortUrl());
-            if (!randomPrefix.equals(expectedPrefix)) {
-                return ApiResponse.error("Short URL not found");
-            }
-
-            // Check if URL has expired
-            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
-                return ApiResponse.error("Short URL has expired");
-            }
-
-            // Increment click count
-            url.setClickCount(url.getClickCount() + 1);
-            urlRepository.save(url);
-
-            return ApiResponse.success("Redirect URL found", url.getOriginalUrl());
-
-        } catch (Exception e) {
-            return ApiResponse.error("Failed to process redirect: " + e.getMessage());
-        }
+        // This method is now deprecated since we're using org-id/url-id format
+        // Redirect to the new format method
+        return redirectToOriginalUrlByOrgAndId(organizationId, urlId);
     }
 
     @Override
@@ -288,27 +279,50 @@ public class UrlServiceImpl implements UrlService {
                 return ApiResponse.error("Access denied to this URL");
             }
 
-            // Update fields
-            url.setTitle(request.getTitle());
-            url.setDescription(request.getDescription());
+            // Update originalUrl if provided (complete URL update)
+            if (request.getOriginalUrl() != null && !request.getOriginalUrl().trim().isEmpty()) {
+                if (!isValidUrl(request.getOriginalUrl())) {
+                    return ApiResponse.error("Invalid URL format");
+                }
+                url.setOriginalUrl(request.getOriginalUrl());
+            }
+
+            // Update title - handle null and empty string cases
+            if (request.getTitle() != null) {
+                url.setTitle(request.getTitle().trim());
+            }
+
+            // Update description - handle null and empty string cases
+            if (request.getDescription() != null) {
+                url.setDescription(request.getDescription().trim());
+            }
+
+            // Update expiration date - can be set to null to remove expiration
             url.setExpiresAt(request.getExpiresAt());
+
+            // Validate expiration date if provided
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Expiration date cannot be in the past");
+            }
 
             // Handle custom short code update if provided
             if (request.getCustomShortCode() != null && !request.getCustomShortCode().trim().isEmpty()) {
                 String newShortCode = request.getCustomShortCode().trim();
                 if (!newShortCode.equals(url.getShortCode())) {
+                    // Check if new short code already exists
                     if (urlRepository.existsByShortCode(newShortCode)) {
                         return ApiResponse.error("Custom short code already exists");
                     }
+                    // Validate new short code format
                     if (!isValidShortCode(newShortCode)) {
-                        return ApiResponse.error("Invalid short code format. Use only letters, numbers, and hyphens");
+                        return ApiResponse.error("Invalid short code format. Use only letters, numbers, and hyphens (3-20 characters)");
                     }
                     url.setShortCode(newShortCode);
-                    // Generate new random prefix for updated URL
-                    String randomPrefix = generateRandomString();
-                    url.setShortUrl(baseUrl + "/" + randomPrefix + "/" + url.getOrganization().getId() + "/" + url.getId());
                 }
             }
+
+            // Note: Organization ID should not be updated after creation for security reasons
+            // If needed, this would require additional validation and business logic
 
             Url savedUrl = urlRepository.save(url);
             UrlResponse response = mapToResponse(savedUrl);
@@ -318,6 +332,18 @@ public class UrlServiceImpl implements UrlService {
         } catch (Exception e) {
             return ApiResponse.error("Failed to update URL: " + e.getMessage());
         }
+    }
+
+    /**
+     * Get the next URL ID for a specific organization
+     * This ensures URL IDs are unique within the organization scope
+     * Uses a synchronized approach to prevent race conditions
+     */
+    private synchronized Long getNextUrlIdForOrganization(Long organizationId) {
+        // Get count of all URLs (active and inactive) for this organization and add 1
+        // This ensures we don't reuse IDs even if URLs are soft-deleted
+        Long count = urlRepository.countByOrganizationId(organizationId);
+        return count + 1;
     }
 
     private String generateUniqueShortCode() {
@@ -353,11 +379,11 @@ public class UrlServiceImpl implements UrlService {
         UrlResponse response = new UrlResponse();
         response.setId(url.getId());
         response.setOriginalUrl(url.getOriginalUrl());
-        response.setShortCode(url.getShortCode());
+        response.setShortCode(url.getShortCode() != null ? url.getShortCode() : "");
         response.setShortUrl(url.getShortUrl());
-        response.setTitle(url.getTitle());
-        response.setDescription(url.getDescription());
-        response.setClickCount(url.getClickCount());
+        response.setTitle(url.getTitle() != null ? url.getTitle() : "");
+        response.setDescription(url.getDescription() != null ? url.getDescription() : "");
+        response.setClickCount(url.getClickCount() != null ? url.getClickCount() : 0);
         response.setCreatedAt(url.getCreatedAt());
         response.setExpiresAt(url.getExpiresAt());
         response.setActive(url.isActive());
@@ -369,17 +395,31 @@ public class UrlServiceImpl implements UrlService {
         return response;
     }
 
-    // Helper method to extract random prefix from short URL
-    private String extractRandomPrefixFromShortUrl(String shortUrl) {
+    // Helper method to extract organization ID from short URL
+    private Long extractOrganizationIdFromShortUrl(String shortUrl) {
         try {
-            // Expected format: baseUrl/randomPrefix/orgId/urlId
+            // Expected format: baseUrl/org-id/url-id
             String[] parts = shortUrl.split("/");
-            if (parts.length >= 4) {
-                return parts[parts.length - 3]; // randomPrefix is the third-to-last part
+            if (parts.length >= 2) {
+                return Long.parseLong(parts[parts.length - 2]); // org-id is the second-to-last part
             }
         } catch (Exception e) {
-            // If parsing fails, return empty string
+            // If parsing fails, return null
         }
-        return "";
+        return null;
+    }
+
+    // Helper method to extract URL ID from short URL
+    private Long extractUrlIdFromShortUrl(String shortUrl) {
+        try {
+            // Expected format: baseUrl/org-id/url-id
+            String[] parts = shortUrl.split("/");
+            if (parts.length >= 1) {
+                return Long.parseLong(parts[parts.length - 1]); // url-id is the last part
+            }
+        } catch (Exception e) {
+            // If parsing fails, return null
+        }
+        return null;
     }
 }

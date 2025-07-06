@@ -170,10 +170,13 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
         setLoadingOrgs(true);
         const response = await organizationService.getUserOrganizations();
         if (response && response.success && response.data) {
-          setOrganizations(response.data.content || []);
+          setOrganizations(response.data.data.content || []);
           // Auto-select first organization if available
-          if (response.data.content && response.data.content.length > 0) {
-            setSelectedOrganization(response.data.content[0].id);
+          if (
+            response.data.data.content &&
+            response.data.data.content.length > 0
+          ) {
+            setSelectedOrganization(response.data.data.content[0].id);
           }
         }
       } catch (error) {

@@ -8,12 +8,27 @@ const createOrganization = (data) => {
   return axios.post(API_URL, data, { headers: authHeader() });
 };
 
-const getUserOrganizations = () => {
+const getUserOrganizations = (
+  page = 0,
+  size = 10,
+  sortBy = "createdAt",
+  sortDir = "desc"
+) => {
   return axios
-    .get(API_URL, {
-      headers: authHeader(),
+    .get(
+      `${API_URL}?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`,
+      {
+        headers: authHeader(),
+      }
+    )
+    .then((response) => {
+      // Return the data directly since the backend already returns ApiResponse
+      return response.data;
     })
-    .then((response) => response.data);
+    .catch((error) => {
+      console.error("Error fetching organizations:", error);
+      throw error;
+    });
 };
 
 const getOrganizationById = (id) => {

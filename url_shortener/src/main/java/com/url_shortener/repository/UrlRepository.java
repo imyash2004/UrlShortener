@@ -32,6 +32,15 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
 
     Long countByOrganizationAndActiveTrue(Organization organization);
 
+    // New method to find URL by organization and organization-specific ID
+    @Query("SELECT u FROM Url u WHERE u.organization = :org AND u.active = true ORDER BY u.createdAt ASC")
+    Page<Url> findByOrganizationAndActiveTrueOrderByCreatedAt(@Param("org") Organization organization, Pageable pageable);
+
+    Long countByOrganizationId(Long organizationId);
+
+    // Find URL by exact short URL match
+    Optional<Url> findByShortUrlAndActiveTrue(String shortUrl);
+
 //    @Query("SELECT COUNT(uc) FROM UrlClick uc WHERE uc.url.id = :urlId AND uc.clickedAt >= :fromDate")
 //    Long countClicksByUrlAndDateAfter(@Param("urlId") Long urlId, @Param("fromDate") LocalDateTime fromDate);
 //}

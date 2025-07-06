@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import DashboardPage from "./pages/DashboardPage";
 import OrganizationsPage from "./pages/OrganizationsPage";
+import OrganizationDetailsPage from "./pages/OrganizationDetailsPage";
 import CreateOrganizationPage from "./pages/CreateOrganizationPage";
 import UrlsPage from "./pages/UrlsPage";
 import MyUrlsPage from "./pages/MyUrlsPage";
@@ -38,7 +39,7 @@ function App() {
           path="/organizations/:organizationId"
           element={
             <ProtectedRoute>
-              <UrlsPage />
+              <OrganizationDetailsPage />
             </ProtectedRoute>
           }
         />
