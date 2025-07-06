@@ -26,11 +26,6 @@ public class OrganizationController {
             @Valid @RequestBody CreateOrganizationRequest request,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<OrganizationResponse> response = organizationService.createOrganization(request, userEmail);
 
@@ -46,11 +41,6 @@ public class OrganizationController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             Authentication authentication) {
-
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
 
         String userEmail = authentication.getName();
         Sort sort = sortDir.equalsIgnoreCase("desc") ?
@@ -71,11 +61,6 @@ public class OrganizationController {
             @PathVariable Long organizationId,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<OrganizationResponse> response =
                 organizationService.getOrganizationById(organizationId, userEmail);
@@ -91,11 +76,6 @@ public class OrganizationController {
             @Valid @RequestBody CreateOrganizationRequest request,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<OrganizationResponse> response =
                 organizationService.updateOrganization(organizationId, request, userEmail);
@@ -109,11 +89,6 @@ public class OrganizationController {
     public ResponseEntity<ApiResponse<String>> deleteOrganization(
             @PathVariable Long organizationId,
             Authentication authentication) {
-
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
 
         String userEmail = authentication.getName();
         ApiResponse<String> response =

@@ -26,11 +26,6 @@ public class UrlController {
             @Valid @RequestBody CreateUrlRequest request,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<UrlResponse> response = urlService.createShortUrl(request, userEmail);
 
@@ -47,11 +42,6 @@ public class UrlController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
             Authentication authentication) {
-
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
 
         String userEmail = authentication.getName();
         Sort sort = sortDir.equalsIgnoreCase("desc") ?
@@ -75,11 +65,6 @@ public class UrlController {
             @RequestParam(defaultValue = "desc") String sortDir,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         Sort sort = sortDir.equalsIgnoreCase("desc") ?
                 Sort.by(sortBy).descending() :
@@ -98,11 +83,6 @@ public class UrlController {
             @PathVariable Long urlId,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<UrlResponse> response = urlService.getUrlDetails(urlId, userEmail);
 
@@ -117,11 +97,6 @@ public class UrlController {
             @Valid @RequestBody CreateUrlRequest request,
             Authentication authentication) {
 
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
-
         String userEmail = authentication.getName();
         ApiResponse<UrlResponse> response = urlService.updateUrl(urlId, request, userEmail);
 
@@ -134,11 +109,6 @@ public class UrlController {
     public ResponseEntity<ApiResponse<String>> deleteUrl(
             @PathVariable Long urlId,
             Authentication authentication) {
-
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error("Authentication required"));
-        }
 
         String userEmail = authentication.getName();
         ApiResponse<String> response = urlService.deleteUrl(urlId, userEmail);

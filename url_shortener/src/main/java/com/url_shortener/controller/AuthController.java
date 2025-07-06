@@ -36,10 +36,6 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> getCurrentUser(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Authentication required"));
-        }
-
         String email = authentication.getName();
         ApiResponse<User> response = authService.getCurrentUser(email);
         return response.isSuccess() ?
