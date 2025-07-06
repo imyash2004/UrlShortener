@@ -10,6 +10,10 @@ public interface UrlService {
     ApiResponse<UrlResponse> createShortUrl(CreateUrlRequest request, String userEmail);
 
     ApiResponse<String> redirectToOriginalUrl(String shortCode);
+    
+    ApiResponse<String> redirectToOriginalUrlByOrgAndId(Long organizationId, Long urlId);
+
+    ApiResponse<String> redirectToOriginalUrlByRandomPrefixAndOrgAndId(String randomPrefix, Long organizationId, Long urlId);
 
     ApiResponse<Page<UrlResponse>> getUrlsByOrganization(Long organizationId, String userEmail, Pageable pageable);
 

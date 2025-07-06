@@ -32,9 +32,75 @@ public class RedirectController {
         }
     }
 
+    @GetMapping("/{organizationId}/{urlId}")
+    public ResponseEntity<?> redirectToOriginalUrlByOrgAndId(
+            @PathVariable Long organizationId,
+            @PathVariable Long urlId) {
+        ApiResponse<String> response = urlService.redirectToOriginalUrlByOrgAndId(organizationId, urlId);
+
+        if (response.isSuccess()) {
+            RedirectView redirectView = new RedirectView();
+            redirectView.setUrl(response.getData());
+            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                    .header("Location", response.getData())
+                    .build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(response);
+        }
+    }
+
+    @GetMapping("/{randomPrefix}/{organizationId}/{urlId}")
+    public ResponseEntity<?> redirectToOriginalUrlByRandomPrefixAndOrgAndId(
+            @PathVariable String randomPrefix,
+            @PathVariable Long organizationId,
+            @PathVariable Long urlId) {
+        ApiResponse<String> response = urlService.redirectToOriginalUrlByRandomPrefixAndOrgAndId(randomPrefix, organizationId, urlId);
+
+        if (response.isSuccess()) {
+            RedirectView redirectView = new RedirectView();
+            redirectView.setUrl(response.getData());
+            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                    .header("Location", response.getData())
+                    .build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(response);
+        }
+    }
+
     @GetMapping("/api/public/preview/{shortCode}")
     public ResponseEntity<ApiResponse<String>> previewUrl(@PathVariable String shortCode) {
         ApiResponse<String> response = urlService.redirectToOriginalUrl(shortCode);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success("Preview URL", response.getData()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @GetMapping("/api/public/preview/{organizationId}/{urlId}")
+    public ResponseEntity<ApiResponse<String>> previewUrlByOrgAndId(
+            @PathVariable Long organizationId,
+            @PathVariable Long urlId) {
+        ApiResponse<String> response = urlService.redirectToOriginalUrlByOrgAndId(organizationId, urlId);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(ApiResponse.success("Preview URL", response.getData()));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @GetMapping("/api/public/preview/{randomPrefix}/{organizationId}/{urlId}")
+    public ResponseEntity<ApiResponse<String>> previewUrlByRandomPrefixAndOrgAndId(
+            @PathVariable String randomPrefix,
+            @PathVariable Long organizationId,
+            @PathVariable Long urlId) {
+        ApiResponse<String> response = urlService.redirectToOriginalUrlByRandomPrefixAndOrgAndId(randomPrefix, organizationId, urlId);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(ApiResponse.success("Preview URL", response.getData()));

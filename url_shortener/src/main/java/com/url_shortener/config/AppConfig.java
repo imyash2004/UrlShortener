@@ -1,5 +1,6 @@
 package com.url_shortener.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -13,12 +14,13 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Arrays;
-import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
 public class AppConfig {
+
+    @Autowired
+    private CorsProperties corsProperties;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,16 +41,12 @@ public class AppConfig {
             @Override
             public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
                 CorsConfiguration cfg = new CorsConfiguration();
-                cfg.setAllowedOrigins(Arrays.asList(
-                        "http://localhost:4200",
-                        "http://localhost:3000",
-                        "http://localhost:5173"
-                ));
-                cfg.setAllowedMethods(Collections.singletonList("*"));
-                cfg.setAllowCredentials(true);
-                cfg.setAllowedHeaders(Collections.singletonList("*"));
-                cfg.setExposedHeaders(Arrays.asList("Authorization"));
-                cfg.setMaxAge(3600L);
+                cfg.setAllowedOrigins(corsProperties.getAllowedOrigins());
+                cfg.setAllowedMethods(corsProperties.getAllowedMethods());
+                cfg.setAllowCredentials(corsProperties.isAllowCredentials());
+                cfg.setAllowedHeaders(corsProperties.getAllowedHeaders());
+                cfg.setExposedHeaders(corsProperties.getExposedHeaders());
+                cfg.setMaxAge(corsProperties.getMaxAge());
                 return cfg;
             }
         };

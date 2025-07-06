@@ -1,4 +1,3 @@
-
 package com.url_shortener.service.impl;
 
 import com.url_shortener.dto.*;
@@ -71,14 +70,25 @@ public class UrlServiceImpl implements UrlService {
             Url url = new Url();
             url.setOriginalUrl(request.getOriginalUrl());
             url.setShortCode(shortCode);
-            url.setShortUrl(baseUrl + "/s/" + shortCode);
             url.setTitle(request.getTitle());
             url.setDescription(request.getDescription());
             url.setExpiresAt(request.getExpiresAt());
             url.setCreatedBy(user);
             url.setOrganization(organization);
+            
+            // Generate random text prefix for the URL
+            String randomPrefix = generateRandomString();
+            
+            // Set a temporary short URL that will be updated after getting the ID
+            // We'll use a placeholder that includes the random prefix and org ID
+            url.setShortUrl(baseUrl + "/" + randomPrefix + "/" + organization.getId() + "/temp");
 
             Url savedUrl = urlRepository.save(url);
+            
+            // Update the short URL with the actual URL ID
+            savedUrl.setShortUrl(baseUrl + "/" + randomPrefix + "/" + organization.getId() + "/" + savedUrl.getId());
+            savedUrl = urlRepository.save(savedUrl);
+            
             UrlResponse response = mapToResponse(savedUrl);
 
             return ApiResponse.success("Short URL created successfully", response);
@@ -99,6 +109,79 @@ public class UrlServiceImpl implements UrlService {
             }
 
             Url url = urlOptional.get();
+
+            // Check if URL has expired
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Short URL has expired");
+            }
+
+            // Increment click count
+            url.setClickCount(url.getClickCount() + 1);
+            urlRepository.save(url);
+
+            return ApiResponse.success("Redirect URL found", url.getOriginalUrl());
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to process redirect: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> redirectToOriginalUrlByOrgAndId(Long organizationId, Long urlId) {
+        try {
+            Optional<Url> urlOptional = urlRepository.findByIdAndActiveTrue(urlId);
+
+            if (urlOptional.isEmpty()) {
+                return ApiResponse.error("Short URL not found");
+            }
+
+            Url url = urlOptional.get();
+
+            // Verify the URL belongs to the specified organization
+            if (!url.getOrganization().getId().equals(organizationId)) {
+                return ApiResponse.error("Short URL not found");
+            }
+
+            // Check if URL has expired
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Short URL has expired");
+            }
+
+            // Increment click count
+            url.setClickCount(url.getClickCount() + 1);
+            urlRepository.save(url);
+
+            return ApiResponse.success("Redirect URL found", url.getOriginalUrl());
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to process redirect: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public ApiResponse<String> redirectToOriginalUrlByRandomPrefixAndOrgAndId(String randomPrefix, Long organizationId, Long urlId) {
+        try {
+            Optional<Url> urlOptional = urlRepository.findByIdAndActiveTrue(urlId);
+
+            if (urlOptional.isEmpty()) {
+                return ApiResponse.error("Short URL not found");
+            }
+
+            Url url = urlOptional.get();
+
+            // Verify the URL belongs to the specified organization
+            if (!url.getOrganization().getId().equals(organizationId)) {
+                return ApiResponse.error("Short URL not found");
+            }
+
+            // Verify the random prefix matches (optional security check)
+            // You can remove this check if you want the random prefix to be purely cosmetic
+            String expectedPrefix = extractRandomPrefixFromShortUrl(url.getShortUrl());
+            if (!randomPrefix.equals(expectedPrefix)) {
+                return ApiResponse.error("Short URL not found");
+            }
 
             // Check if URL has expired
             if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -221,7 +304,9 @@ public class UrlServiceImpl implements UrlService {
                         return ApiResponse.error("Invalid short code format. Use only letters, numbers, and hyphens");
                     }
                     url.setShortCode(newShortCode);
-                    url.setShortUrl(baseUrl + "/s/" + newShortCode);
+                    // Generate new random prefix for updated URL
+                    String randomPrefix = generateRandomString();
+                    url.setShortUrl(baseUrl + "/" + randomPrefix + "/" + url.getOrganization().getId() + "/" + url.getId());
                 }
             }
 
@@ -279,7 +364,22 @@ public class UrlServiceImpl implements UrlService {
         response.setCreatedByEmail(url.getCreatedBy().getEmail());
         response.setCreatedByName(url.getCreatedBy().getFirstName() + " " + url.getCreatedBy().getLastName());
         response.setOrganizationName(url.getOrganization().getName());
+        response.setOrganizationId(url.getOrganization().getId());
 
         return response;
+    }
+
+    // Helper method to extract random prefix from short URL
+    private String extractRandomPrefixFromShortUrl(String shortUrl) {
+        try {
+            // Expected format: baseUrl/randomPrefix/orgId/urlId
+            String[] parts = shortUrl.split("/");
+            if (parts.length >= 4) {
+                return parts[parts.length - 3]; // randomPrefix is the third-to-last part
+            }
+        } catch (Exception e) {
+            // If parsing fails, return empty string
+        }
+        return "";
     }
 }

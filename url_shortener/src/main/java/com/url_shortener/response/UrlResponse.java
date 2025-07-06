@@ -1,7 +1,6 @@
 package com.url_shortener.response;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,4 +22,5 @@ public class UrlResponse {
     private String createdByEmail;
     private String createdByName;
     private String organizationName;
+    private Long organizationId;
 }
