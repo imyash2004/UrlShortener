@@ -13,7 +13,7 @@ public interface UrlService {
     
     ApiResponse<String> redirectToOriginalUrlByOrgAndId(Long organizationId, Long urlId);
 
-    ApiResponse<String> redirectToOriginalUrlByRandomPrefixAndOrgAndId(String randomPrefix, Long organizationId, Long urlId);
+    ApiResponse<String> redirectToOriginalUrlByShortCodeOrgAndId(String shortCode, Long organizationId, Long urlId);
 
     ApiResponse<Page<UrlResponse>> getUrlsByOrganization(Long organizationId, String userEmail, Pageable pageable);
 

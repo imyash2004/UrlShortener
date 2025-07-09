@@ -75,14 +75,11 @@ public class UrlServiceImpl implements UrlService {
             // Get the next URL ID within the organization
             Long orgLevelUrlId = getNextUrlIdForOrganization(organization.getId());
 
-            // Create the short URL with format: /org-id/{url-id}
-            String shortUrl = baseUrl + "/" +shortCode+"/"+ organization.getId() + "/" + orgLevelUrlId;
-
             // Create URL entity with all fields from request
             Url url = new Url();
             url.setOriginalUrl(request.getOriginalUrl());
             url.setShortCode(shortCode);
-            url.setShortUrl(shortUrl);
+            url.setOrganizationUrlId(orgLevelUrlId);
 
             // Handle title - use provided title or empty string if null
             url.setTitle(request.getTitle() != null ? request.getTitle().trim() : "");
@@ -151,20 +148,14 @@ public class UrlServiceImpl implements UrlService {
         try {
             Organization organization = organizationService.findOrganizationEntity(organizationId);
 
-            // Find the URL by matching the short URL pattern
-            String expectedShortUrl = baseUrl + "/" + organizationId + "/" + urlId;
-            Optional<Url> urlOptional = urlRepository.findByShortUrlAndActiveTrue(expectedShortUrl);
+            // Find the URL by organizationId and organizationUrlId
+            Optional<Url> urlOptional = urlRepository.findByOrganizationIdAndOrganizationUrlIdAndActiveTrue(organizationId, urlId);
 
             if (urlOptional.isEmpty()) {
                 return ApiResponse.error("Short URL not found");
             }
 
             Url url = urlOptional.get();
-
-            // Verify organization matches (additional security check)
-            if (!url.getOrganization().getId().equals(organizationId)) {
-                return ApiResponse.error("Short URL not found");
-            }
 
             // Check if URL has expired
             if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
@@ -184,10 +175,33 @@ public class UrlServiceImpl implements UrlService {
 
     @Override
     @Transactional
-    public ApiResponse<String> redirectToOriginalUrlByRandomPrefixAndOrgAndId(String randomPrefix, Long organizationId, Long urlId) {
-        // This method is now deprecated since we're using org-id/url-id format
-        // Redirect to the new format method
-        return redirectToOriginalUrlByOrgAndId(organizationId, urlId);
+    public ApiResponse<String> redirectToOriginalUrlByShortCodeOrgAndId(String shortCode, Long organizationId, Long urlId) {
+        try {
+            Organization organization = organizationService.findOrganizationEntity(organizationId);
+            
+            // Find the URL by shortCode, organizationId, and organizationUrlId
+            Optional<Url> urlOptional = urlRepository.findByShortCodeAndOrganizationIdAndOrganizationUrlIdAndActiveTrue(shortCode, organizationId, urlId);
+
+            if (urlOptional.isEmpty()) {
+                return ApiResponse.error("Short URL not found");
+            }
+
+            Url url = urlOptional.get();
+
+            // Check if URL has expired
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Short URL has expired");
+            }
+
+            // Increment click count
+            url.setClickCount(url.getClickCount() + 1);
+            urlRepository.save(url);
+
+            return ApiResponse.success("Redirect URL found", url.getOriginalUrl());
+
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to process redirect: " + e.getMessage());
+        }
     }
 
     @Override
@@ -380,7 +394,9 @@ public class UrlServiceImpl implements UrlService {
         response.setId(url.getId());
         response.setOriginalUrl(url.getOriginalUrl());
         response.setShortCode(url.getShortCode() != null ? url.getShortCode() : "");
-        response.setShortUrl(url.getShortUrl());
+        // Construct short URL dynamically
+        String shortUrl = baseUrl + "/s/" + url.getShortCode() + "/" + url.getOrganization().getId() + "/" + url.getOrganizationUrlId();
+        response.setShortUrl(shortUrl);
         response.setTitle(url.getTitle() != null ? url.getTitle() : "");
         response.setDescription(url.getDescription() != null ? url.getDescription() : "");
         response.setClickCount(url.getClickCount() != null ? url.getClickCount() : 0);

@@ -22,8 +22,11 @@ public class Url {
     @Column(unique = true, nullable = false)
     private String shortCode;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String shortUrl;
+
+    @Column(nullable = false)
+    private Long organizationUrlId;
 
     private String title;
 

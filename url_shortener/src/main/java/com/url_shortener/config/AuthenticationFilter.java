@@ -26,6 +26,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/signup",
             "/api/auth/signin",
             "/api/public/",
+            "/s/",
             "/error"
     );
 
@@ -74,4 +75,4 @@ public class AuthenticationFilter extends OncePerRequestFilter {
         
         response.getWriter().write(jsonResponse);
     }
-} 
+}
