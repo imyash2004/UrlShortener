@@ -7,7 +7,11 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "urls")
+@Table(name = "urls",
+       uniqueConstraints = {
+           @UniqueConstraint(columnNames = {"organization_id", "originalUrl"}),
+           @UniqueConstraint(columnNames = {"organization_id", "shortCode"})
+       })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

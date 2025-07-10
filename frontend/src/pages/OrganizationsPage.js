@@ -67,7 +67,9 @@ const OrganizationsPage = () => {
   const fetchOrganizations = () => {
     organizationService.getUserOrganizations(0, 10, 'createdAt', 'desc').then(
       (response) => {
-        setOrganizations(response.data.data.content);
+        // The backend returns a Page object, so we need to access the content array
+        const organizationsData = response.data.content || response.data;
+        setOrganizations(organizationsData);
       },
       (error) => {
         console.error('Error fetching organizations', error);
@@ -84,8 +86,11 @@ const OrganizationsPage = () => {
     // Assuming the new org is the first in the list after refetching
     organizationService.getUserOrganizations(0, 1, 'createdAt', 'desc').then(
       (response) => {
-        const newOrgId = response.data.data.content[0].id;
-        navigate(`/organizations/${newOrgId}`);
+        const organizationsData = response.data.content || response.data;
+        if (organizationsData && organizationsData.length > 0) {
+          const newOrgId = organizationsData[0].id;
+          navigate(`/organizations/${newOrgId}`);
+        }
       }
     )
   };
@@ -99,7 +104,7 @@ const OrganizationsPage = () => {
         </CreateButton>
       </Header>
       <OrgList>
-        {organizations.map((org) => (
+        {Array.isArray(organizations) && organizations.map((org) => (
           <OrgCard key={org.id}>
             <OrgLink to={`/organizations/${org.id}`}>{org.name}</OrgLink>
           </OrgCard>

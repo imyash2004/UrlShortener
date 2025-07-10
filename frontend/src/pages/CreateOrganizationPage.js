@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import organizationService from '../services/organizationService';
-import styled from 'styled-components';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import organizationService from "../services/organizationService";
+import styled from "styled-components";
 
 const PageContainer = styled.div`
   min-height: 100vh;
@@ -68,17 +68,40 @@ const Button = styled.button`
 `;
 
 const CreateOrganizationPage = () => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [shortName, setShortName] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
-      await organizationService.createOrganization({ name, description });
-      navigate('/dashboard');
+      const response = await organizationService.createOrganization({
+        name,
+        shortName,
+        description,
+      });
+
+      if (response.data && response.data.success) {
+        navigate("/dashboard");
+      } else {
+        setError(response.data?.message || "Failed to create organization");
+      }
     } catch (error) {
-      console.error('Failed to create organization', error);
+      console.error("Failed to create organization", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to create organization. Please try again.";
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +117,18 @@ const CreateOrganizationPage = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              disabled={loading}
+            />
+          </InputGroup>
+          <InputGroup>
+            <Label>Short Name (for branding, e.g. acme)</Label>
+            <Input
+              type="text"
+              value={shortName}
+              onChange={(e) => setShortName(e.target.value)}
+              required
+              maxLength={50}
+              disabled={loading}
             />
           </InputGroup>
           <InputGroup>
@@ -101,9 +136,27 @@ const CreateOrganizationPage = () => {
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              disabled={loading}
             />
           </InputGroup>
-          <Button type="submit">Create Organization</Button>
+          {error && (
+            <div
+              style={{
+                color: "#ff4757",
+                background: "rgba(255, 71, 87, 0.1)",
+                border: "1px solid #ff4757",
+                borderRadius: "8px",
+                padding: "1rem",
+                marginBottom: "1rem",
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </div>
+          )}
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creating..." : "Create Organization"}
+          </Button>
         </Form>
       </FormContainer>
     </PageContainer>

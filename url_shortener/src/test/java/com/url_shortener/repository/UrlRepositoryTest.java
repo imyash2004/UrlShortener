@@ -54,6 +54,7 @@ class UrlRepositoryTest {
         testOrganization = new Organization();
         testOrganization.setName("Test Organization");
         testOrganization.setDescription("Test Description");
+        testOrganization.setShortName("testorg");
         testOrganization.setOwner(testUser);
         testOrganization.setActive(true);
         testOrganization.setCreatedAt(LocalDateTime.now());
@@ -71,6 +72,7 @@ class UrlRepositoryTest {
         testUrl.setActive(true);
         testUrl.setCreatedBy(testUser);
         testUrl.setOrganization(testOrganization);
+        testUrl.setOrganizationUrlId(1L);
     }
 
     @Test
@@ -140,6 +142,7 @@ class UrlRepositoryTest {
         secondUrl.setActive(true);
         secondUrl.setCreatedBy(testUser);
         secondUrl.setOrganization(testOrganization);
+        secondUrl.setOrganizationUrlId(2L);
         entityManager.persistAndFlush(secondUrl);
 
         Pageable pageable = PageRequest.of(0, 10);
@@ -265,6 +268,7 @@ class UrlRepositoryTest {
         secondUrl.setActive(true);
         secondUrl.setCreatedBy(testUser);
         secondUrl.setOrganization(testOrganization);
+        secondUrl.setOrganizationUrlId(3L);
         entityManager.persistAndFlush(secondUrl);
 
         // Create inactive URL
@@ -279,6 +283,7 @@ class UrlRepositoryTest {
         inactiveUrl.setActive(false);
         inactiveUrl.setCreatedBy(testUser);
         inactiveUrl.setOrganization(testOrganization);
+        inactiveUrl.setOrganizationUrlId(4L);
         entityManager.persistAndFlush(inactiveUrl);
 
         // Act

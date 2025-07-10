@@ -16,45 +16,6 @@ public class RedirectController {
 
     private final UrlService urlService;
 
-    @GetMapping("/{shortCode}/{organizationId}/{urlId}")
-    public ResponseEntity<?> redirectToOriginalUrlByShortCodeOrgAndId(
-            @PathVariable String shortCode,
-            @PathVariable Long organizationId,
-            @PathVariable Long urlId) {
-        ApiResponse<String> response = urlService.redirectToOriginalUrlByShortCodeOrgAndId(shortCode, organizationId, urlId);
-
-        if (response.isSuccess()) {
-            RedirectView redirectView = new RedirectView();
-            redirectView.setUrl(response.getData());
-            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
-            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-                    .header("Location", response.getData())
-                    .build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(response);
-        }
-    }
-
-    @GetMapping("/{organizationId}/{urlId}")
-    public ResponseEntity<?> redirectToOriginalUrlByOrgAndId(
-            @PathVariable Long organizationId,
-            @PathVariable Long urlId) {
-        ApiResponse<String> response = urlService.redirectToOriginalUrlByOrgAndId(organizationId, urlId);
-
-        if (response.isSuccess()) {
-            RedirectView redirectView = new RedirectView();
-            redirectView.setUrl(response.getData());
-            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
-            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
-                    .header("Location", response.getData())
-                    .build();
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(response);
-        }
-    }
-
     @GetMapping("/api/public/preview/{shortCode}")
     public ResponseEntity<ApiResponse<String>> previewUrl(@PathVariable String shortCode) {
         ApiResponse<String> response = urlService.redirectToOriginalUrl(shortCode);
@@ -76,6 +37,25 @@ public class RedirectController {
             return ResponseEntity.ok(ApiResponse.success("Preview URL", response.getData()));
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    @GetMapping("/{orgShortName}/{shortCode}")
+    public ResponseEntity<?> redirectToOriginalUrlByOrgShortNameAndShortCode(
+            @PathVariable String orgShortName,
+            @PathVariable String shortCode) {
+        ApiResponse<String> response = urlService.redirectToOriginalUrlByOrgShortNameAndShortCode(orgShortName, shortCode);
+
+        if (response.isSuccess()) {
+            RedirectView redirectView = new RedirectView();
+            redirectView.setUrl(response.getData());
+            redirectView.setStatusCode(HttpStatus.MOVED_PERMANENTLY);
+            return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY)
+                    .header("Location", response.getData())
+                    .build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(response);
         }
     }
 }

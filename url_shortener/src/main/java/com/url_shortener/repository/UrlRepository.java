@@ -19,6 +19,8 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
 
     boolean existsByShortCode(String shortCode);
 
+    boolean existsByShortCodeAndActiveTrue(String shortCode);
+
     Page<Url> findByOrganizationAndActiveTrue(Organization organization, Pageable pageable);
 
     Page<Url> findByCreatedByAndActiveTrue(User user, Pageable pageable);
@@ -47,6 +49,14 @@ public interface UrlRepository extends JpaRepository<Url, Long> {
 
     @Query("SELECT u FROM Url u WHERE u.organization.id = :organizationId AND u.organizationUrlId = :organizationUrlId AND u.active = true")
     Optional<Url> findByOrganizationIdAndOrganizationUrlIdAndActiveTrue(@Param("organizationId") Long organizationId, @Param("organizationUrlId") Long organizationUrlId);
+
+    boolean existsByOrganizationAndOriginalUrl(Organization organization, String originalUrl);
+
+    boolean existsByOrganizationAndShortCode(Organization organization, String shortCode);
+
+    boolean existsByOrganizationAndShortCodeAndActiveTrue(Organization organization, String shortCode);
+
+    Optional<Url> findByOrganizationAndShortCodeAndActiveTrue(Organization organization, String shortCode);
 
 //    @Query("SELECT COUNT(uc) FROM UrlClick uc WHERE uc.url.id = :urlId AND uc.clickedAt >= :fromDate")
 //    Long countClicksByUrlAndDateAfter(@Param("urlId") Long urlId, @Param("fromDate") LocalDateTime fromDate);

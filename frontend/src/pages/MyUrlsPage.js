@@ -387,8 +387,15 @@ const MyUrlsPage = () => {
   const [totalElements, setTotalElements] = useState(0);
   const [pageSize] = useState(10);
   const [editingUrl, setEditingUrl] = useState(null);
-  const [editForm, setEditForm] = useState({ title: "", originalUrl: "" });
+  const [editForm, setEditForm] = useState({
+    title: "",
+    originalUrl: "",
+    description: "",
+    customShortCode: "",
+    expiresAt: "",
+  });
   const [error, setError] = useState(null);
+  const [deletingUrlId, setDeletingUrlId] = useState(null);
   const [showCreateUrlModal, setShowCreateUrlModal] = useState(false);
 
   useEffect(() => {
@@ -460,15 +467,37 @@ const MyUrlsPage = () => {
     setEditForm({
       title: url.title || "",
       originalUrl: url.originalUrl || "",
+      description: url.description || "",
+      customShortCode: url.shortCode || "",
+      expiresAt: url.expiresAt
+        ? new Date(url.expiresAt).toISOString().slice(0, 16)
+        : "",
     });
   };
 
   const handleSaveEdit = async () => {
     try {
-      const response = await urlService.updateUrl(editingUrl.id, editForm);
+      // Prepare the update data
+      const updateData = {
+        ...editForm,
+        // Convert datetime-local to ISO string for backend
+        expiresAt: editForm.expiresAt
+          ? new Date(editForm.expiresAt).toISOString()
+          : null,
+        // Only include organizationId if it exists (for compatibility)
+        organizationId: editingUrl.organizationId,
+      };
+
+      const response = await urlService.updateUrl(editingUrl.id, updateData);
       if (response && response.success) {
         setEditingUrl(null);
-        setEditForm({ title: "", originalUrl: "" });
+        setEditForm({
+          title: "",
+          originalUrl: "",
+          description: "",
+          customShortCode: "",
+          expiresAt: "",
+        });
         fetchUrls(); // Refresh the list
       } else {
         console.error("Failed to update URL:", response?.message);
@@ -479,16 +508,30 @@ const MyUrlsPage = () => {
   };
 
   const handleDelete = async (urlId) => {
-    if (window.confirm("Are you sure you want to delete this URL?")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this URL? This action cannot be undone."
+      )
+    ) {
       try {
+        setDeletingUrlId(urlId);
         const response = await urlService.deleteUrl(urlId);
         if (response && response.success) {
-          fetchUrls(); // Refresh the list
+          // Optimistically remove the URL from the list
+          setUrls(urls.filter((url) => url.id !== urlId));
+          // Update total count
+          setTotalElements((prev) => Math.max(0, prev - 1));
+          // You could add a toast notification here for success feedback
+          console.log("URL deleted successfully");
         } else {
           console.error("Failed to delete URL:", response?.message);
+          // You could add error toast notification here
         }
       } catch (error) {
         console.error("Error deleting URL:", error);
+        // You could add error toast notification here
+      } finally {
+        setDeletingUrlId(null);
       }
     }
   };
@@ -702,7 +745,15 @@ const MyUrlsPage = () => {
                         onMouseLeave={(e) => handleUrlLeave(e, "short")}
                         title="Click to visit shortened URL"
                       >
-                        <strong>Shortened:</strong> {url.shortUrl} 🔗
+                        <strong>Shortened:</strong>{" "}
+                        <a
+                          href={url.shortUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {url.shortUrl}
+                        </a>{" "}
+                        🔗
                       </div>
                       <button
                         style={CopyButton}
@@ -744,14 +795,19 @@ const MyUrlsPage = () => {
                     <button
                       style={DeleteButton}
                       onClick={() => handleDelete(url.id)}
+                      disabled={deletingUrlId === url.id}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-1px)";
+                        if (deletingUrlId !== url.id) {
+                          e.currentTarget.style.transform = "translateY(-1px)";
+                        }
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.transform = "translateY(0)";
                       }}
                     >
-                      🗑️ Delete
+                      {deletingUrlId === url.id
+                        ? "🗑️ Deleting..."
+                        : "🗑️ Delete"}
                     </button>
                   </div>
                 </div>
@@ -831,6 +887,67 @@ const MyUrlsPage = () => {
                 />
               </div>
 
+              <div style={FormGroup}>
+                <label style={Label}>Description</label>
+                <textarea
+                  style={{
+                    ...Input,
+                    resize: "vertical",
+                    minHeight: "80px",
+                  }}
+                  value={editForm.description}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, description: e.target.value })
+                  }
+                  placeholder="Enter URL description"
+                  rows={3}
+                />
+              </div>
+
+              <div style={FormGroup}>
+                <label style={Label}>Custom Short Code</label>
+                <input
+                  type="text"
+                  style={Input}
+                  value={editForm.customShortCode}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      customShortCode: e.target.value,
+                    })
+                  }
+                  placeholder="Enter custom short code (optional)"
+                />
+                <small
+                  style={{
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  3-20 characters, letters, numbers, and hyphens only
+                </small>
+              </div>
+
+              <div style={FormGroup}>
+                <label style={Label}>Expiration Date</label>
+                <input
+                  type="datetime-local"
+                  style={Input}
+                  value={editForm.expiresAt}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, expiresAt: e.target.value })
+                  }
+                />
+                <small
+                  style={{
+                    color: "rgba(255, 255, 255, 0.7)",
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  Leave empty for no expiration
+                </small>
+              </div>
+
               <div style={ModalButtons}>
                 <button
                   style={SaveButton}
@@ -848,7 +965,13 @@ const MyUrlsPage = () => {
                   style={CancelButton}
                   onClick={() => {
                     setEditingUrl(null);
-                    setEditForm({ title: "", originalUrl: "" });
+                    setEditForm({
+                      title: "",
+                      originalUrl: "",
+                      description: "",
+                      customShortCode: "",
+                      expiresAt: "",
+                    });
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background =
@@ -876,4 +999,3 @@ const MyUrlsPage = () => {
 };
 
 export default MyUrlsPage;
- 

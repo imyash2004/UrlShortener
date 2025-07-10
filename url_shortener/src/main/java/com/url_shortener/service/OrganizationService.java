@@ -7,6 +7,8 @@ import com.url_shortener.response.OrganizationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.Optional;
+
 public interface OrganizationService {
     ApiResponse<OrganizationResponse> createOrganization(CreateOrganizationRequest request, String userEmail);
 
@@ -21,4 +23,6 @@ public interface OrganizationService {
     Organization findOrganizationEntity(Long organizationId);
 
     boolean hasAccess(Long organizationId, String userEmail);
+
+    Optional<Organization> findByShortName(String shortName);
 }

@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useContext } from "react";
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Zap, CheckCircle, AlertCircle } from "lucide-react";
+import {
+  User,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Zap,
+  CheckCircle,
+  AlertCircle,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 
@@ -55,7 +65,12 @@ const SignUpPage = () => {
     setMessageType("");
 
     // Basic validation
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim()) {
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !password.trim()
+    ) {
       setMessage("Please fill in all fields");
       setMessageType("error");
       setIsLoading(false);
@@ -70,20 +85,24 @@ const SignUpPage = () => {
     }
 
     try {
-      await signup(firstName, lastName, email, password);
-      
-      // Show success message
-      setMessage("Account created successfully! Redirecting to login...");
-      setMessageType("success");
-      
-      // Redirect to login page after a brief delay
-      setTimeout(() => {
-        navigate("/login");
-      }, 2000);
-      
+      const result = await signup(firstName, lastName, email, password);
+      if (result.success) {
+        setMessage("Account created successfully! Redirecting to login...");
+        setMessageType("success");
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
+      } else {
+        setMessage(
+          result.message || "Failed to create account. Please try again."
+        );
+        setMessageType("error");
+      }
     } catch (error) {
       console.error("Sign up failed", error);
-      setMessage(error.message || "Failed to create account. Please try again.");
+      setMessage(
+        error.message || "Failed to create account. Please try again."
+      );
       setMessageType("error");
     } finally {
       setIsLoading(false);
@@ -234,12 +253,14 @@ const SignUpPage = () => {
             <div className="space-y-6">
               {/* Message Display */}
               {message && (
-                <div className={`message-animate p-4 rounded-xl flex items-center space-x-2 ${
-                  messageType === 'success' 
-                    ? 'bg-green-500/20 border border-green-500/50 text-green-400' 
-                    : 'bg-red-500/20 border border-red-500/50 text-red-400'
-                }`}>
-                  {messageType === 'success' ? (
+                <div
+                  className={`message-animate p-4 rounded-xl flex items-center space-x-2 ${
+                    messageType === "success"
+                      ? "bg-green-500/20 border border-green-500/50 text-green-400"
+                      : "bg-red-500/20 border border-red-500/50 text-red-400"
+                  }`}
+                >
+                  {messageType === "success" ? (
                     <CheckCircle className="w-5 h-5" />
                   ) : (
                     <AlertCircle className="w-5 h-5" />

@@ -9,6 +9,7 @@ import OrganizationDetailsPage from "./pages/OrganizationDetailsPage";
 import CreateOrganizationPage from "./pages/CreateOrganizationPage";
 import UrlsPage from "./pages/UrlsPage";
 import MyUrlsPage from "./pages/MyUrlsPage";
+import CreateUrlPage from "./pages/CreateUrlPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -56,6 +57,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CreateOrganizationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/urls/new"
+          element={
+            <ProtectedRoute>
+              <CreateUrlPage />
             </ProtectedRoute>
           }
         />

@@ -26,4 +26,6 @@ public interface UrlService {
     ApiResponse<String> deleteUrl(Long urlId, String userEmail);
 
     ApiResponse<UrlResponse> updateUrl(Long urlId, CreateUrlRequest request, String userEmail);
+
+    ApiResponse<String> redirectToOriginalUrlByOrgShortNameAndShortCode(String orgShortName, String shortCode);
 }

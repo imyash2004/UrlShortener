@@ -16,4 +16,8 @@ public class CreateOrganizationRequest {
 
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
+
+    @NotBlank(message = "Short name is required")
+    @Size(max = 50, message = "Short name cannot exceed 50 characters")
+    private String shortName;
 }

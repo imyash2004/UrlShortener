@@ -21,25 +21,22 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<AuthResponse>> signUp(@Valid @RequestBody SignUpRequest request) {
         ApiResponse<AuthResponse> response = authService.signUp(request);
-        return response.isSuccess() ?
-                ResponseEntity.ok(response) :
-                ResponseEntity.badRequest().body(response);
+        // Return 200 for business logic errors, 400 only for validation errors
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/signin")
     public ResponseEntity<ApiResponse<AuthResponse>> signIn(@Valid @RequestBody SignInRequest request) {
         ApiResponse<AuthResponse> response = authService.signIn(request);
-        return response.isSuccess() ?
-                ResponseEntity.ok(response) :
-                ResponseEntity.badRequest().body(response);
+        // Return 200 for business logic errors, 400 only for validation errors
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<User>> getCurrentUser(Authentication authentication) {
         String email = authentication.getName();
         ApiResponse<User> response = authService.getCurrentUser(email);
-        return response.isSuccess() ?
-                ResponseEntity.ok(response) :
-                ResponseEntity.badRequest().body(response);
+        // Return 200 for business logic errors, 400 only for validation errors
+        return ResponseEntity.ok(response);
     }
 }

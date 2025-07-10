@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import urlService from '../services/urlService';
-import { Link, useParams } from 'react-router-dom';
-import styled from 'styled-components';
+import React, { useState, useEffect } from "react";
+import urlService from "../services/urlService";
+import { Link, useParams } from "react-router-dom";
+import styled from "styled-components";
 
 const UrlsContainer = styled.div`
   padding: 2rem;
@@ -55,6 +55,21 @@ const UrlCard = styled.li`
   align-items: center;
 `;
 
+const DeleteButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  background-color: #dc3545;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #c82333;
+  }
+`;
+
 const UrlLink = styled.a`
   text-decoration: none;
   color: #333;
@@ -68,31 +83,57 @@ const ShortUrl = styled.span`
 
 const UrlsPage = () => {
   const [urls, setUrls] = useState([]);
+  const [deletingUrlId, setDeletingUrlId] = useState(null);
   const { organizationId } = useParams();
 
   useEffect(() => {
     if (organizationId) {
-      urlService
-        .getUrlsByOrganization(organizationId, 0, 10, 'createdAt', 'desc')
-        .then(
-          (response) => {
-            setUrls(response.data.data.content);
-          },
-          (error) => {
-            console.error('Error fetching URLs', error);
-          }
-        );
-    } else {
-      urlService.getUserUrls(0, 10, 'createdAt', 'desc').then(
+      urlService.getUrls(organizationId).then(
         (response) => {
-          setUrls(response.data.data.content);
+          if (response.success) {
+            setUrls(response.data.content);
+          }
         },
         (error) => {
-          console.error('Error fetching URLs', error);
+          console.error("Error fetching URLs", error);
+        }
+      );
+    } else {
+      urlService.getMyUrls().then(
+        (response) => {
+          if (response.success) {
+            setUrls(response.data.content);
+          }
+        },
+        (error) => {
+          console.error("Error fetching URLs", error);
         }
       );
     }
   }, [organizationId]);
+
+  const handleDelete = async (urlId) => {
+    if (window.confirm("Are you sure you want to delete this URL? This action cannot be undone.")) {
+      try {
+        setDeletingUrlId(urlId);
+        const response = await urlService.deleteUrl(urlId);
+        if (response && response.success) {
+          // Optimistically remove the URL from the list
+          setUrls(urls.filter((url) => url.id !== urlId));
+          // You could add a toast notification here for success feedback
+          console.log("URL deleted successfully");
+        } else {
+          console.error("Failed to delete URL:", response?.message);
+          // You could add error toast notification here
+        }
+      } catch (error) {
+        console.error("Error deleting URL:", error);
+        // You could add error toast notification here
+      } finally {
+        setDeletingUrlId(null);
+      }
+    }
+  };
 
   return (
     <UrlsContainer>
@@ -103,14 +144,32 @@ const UrlsPage = () => {
       <UrlList>
         {urls.map((url) => (
           <UrlCard key={url.id}>
-            <UrlLink
-              href={url.originalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <div>
+              <UrlLink
+                href={url.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {url.originalUrl}
+              </UrlLink>
+              <br />
+              <ShortUrl>
+                Shortened:{" "}
+                <a
+                  href={url.shortUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {url.shortUrl}
+                </a>
+              </ShortUrl>
+            </div>
+            <DeleteButton 
+              onClick={() => handleDelete(url.id)}
+              disabled={deletingUrlId === url.id}
             >
-              {url.originalUrl}
-            </UrlLink>
-            <ShortUrl>{url.shortUrl}</ShortUrl>
+              {deletingUrlId === url.id ? "Deleting..." : "Delete"}
+            </DeleteButton>
           </UrlCard>
         ))}
       </UrlList>

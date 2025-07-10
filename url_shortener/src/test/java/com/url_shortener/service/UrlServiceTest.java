@@ -63,7 +63,8 @@ class UrlServiceTest {
         when(organizationService.hasAccess(any(), anyString())).thenReturn(true);
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.of(testUser));
         when(organizationService.findOrganizationEntity(any())).thenReturn(testOrganization);
-        when(urlRepository.existsByShortCode(anyString())).thenReturn(false);
+        when(urlRepository.existsByOrganizationAndOriginalUrl(any(), anyString())).thenReturn(false);
+        when(urlRepository.existsByOrganizationAndShortCodeAndActiveTrue(any(), anyString())).thenReturn(false);
         when(urlRepository.save(any(Url.class))).thenReturn(testUrl);
 
         // Act
@@ -73,6 +74,7 @@ class UrlServiceTest {
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
         verify(organizationService).hasAccess(1L, "test@example.com");
+        verify(organizationService).findOrganizationEntity(1L);
         verify(urlRepository).save(any(Url.class));
     }
 
@@ -146,7 +148,7 @@ class UrlServiceTest {
     @Test
     void updateUrl_Success() {
         // Arrange
-        when(urlRepository.findById(any())).thenReturn(Optional.of(testUrl));
+        when(urlRepository.findByIdAndActiveTrue(any())).thenReturn(Optional.of(testUrl));
         when(organizationService.hasAccess(any(), anyString())).thenReturn(true);
         when(urlRepository.save(any(Url.class))).thenReturn(testUrl);
 
@@ -156,7 +158,7 @@ class UrlServiceTest {
         // Assert
         assertTrue(response.isSuccess());
         assertNotNull(response.getData());
-        verify(urlRepository).findById(1L);
+        verify(urlRepository).findByIdAndActiveTrue(1L);
         verify(organizationService).hasAccess(1L, "test@example.com");
         verify(urlRepository).save(any(Url.class));
     }
@@ -164,7 +166,7 @@ class UrlServiceTest {
     @Test
     void updateUrl_UrlNotFound() {
         // Arrange
-        when(urlRepository.findById(any())).thenReturn(Optional.empty());
+        when(urlRepository.findByIdAndActiveTrue(any())).thenReturn(Optional.empty());
 
         // Act
         ApiResponse<UrlResponse> response = urlService.updateUrl(1L, createUrlRequest, "test@example.com");
@@ -172,14 +174,14 @@ class UrlServiceTest {
         // Assert
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("URL not found"));
-        verify(urlRepository).findById(1L);
+        verify(urlRepository).findByIdAndActiveTrue(1L);
         verify(urlRepository, never()).save(any(Url.class));
     }
 
     @Test
     void updateUrl_NoAccess() {
         // Arrange
-        when(urlRepository.findById(any())).thenReturn(Optional.of(testUrl));
+        when(urlRepository.findByIdAndActiveTrue(any())).thenReturn(Optional.of(testUrl));
         when(organizationService.hasAccess(any(), anyString())).thenReturn(false);
 
         // Act
@@ -188,7 +190,7 @@ class UrlServiceTest {
         // Assert
         assertFalse(response.isSuccess());
         assertTrue(response.getMessage().contains("Access denied"));
-        verify(urlRepository).findById(1L);
+        verify(urlRepository).findByIdAndActiveTrue(1L);
         verify(organizationService).hasAccess(1L, "test@example.com");
         verify(urlRepository, never()).save(any(Url.class));
     }
@@ -198,7 +200,6 @@ class UrlServiceTest {
         // Arrange
         when(urlRepository.findById(any())).thenReturn(Optional.of(testUrl));
         when(organizationService.hasAccess(any(), anyString())).thenReturn(true);
-        when(urlRepository.save(any(Url.class))).thenReturn(testUrl);
 
         // Act
         ApiResponse<String> response = urlService.deleteUrl(1L, "test@example.com");
@@ -208,7 +209,7 @@ class UrlServiceTest {
         assertTrue(response.getMessage().contains("deleted successfully"));
         verify(urlRepository).findById(1L);
         verify(organizationService).hasAccess(1L, "test@example.com");
-        verify(urlRepository).save(any(Url.class));
+        verify(urlRepository).delete(testUrl);
     }
 
     @Test

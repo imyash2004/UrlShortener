@@ -53,14 +53,19 @@ public class UrlServiceImpl implements UrlService {
                 return ApiResponse.error("Invalid URL format");
             }
 
+            // Check if originalUrl already exists for this organization
+            if (urlRepository.existsByOrganizationAndOriginalUrl(organization, request.getOriginalUrl())) {
+                return ApiResponse.error("A shortened URL for this original URL already exists in this organization");
+            }
+
             // Handle custom short code logic
             String shortCode = null;
             if (request.getCustomShortCode() != null && !request.getCustomShortCode().trim().isEmpty()) {
                 shortCode = request.getCustomShortCode().trim();
 
-                // Check if custom short code already exists
-                if (urlRepository.existsByShortCode(shortCode)) {
-                    return ApiResponse.error("Custom short code already exists");
+                // Check if custom short code already exists for this organization (only active URLs)
+                if (urlRepository.existsByOrganizationAndShortCodeAndActiveTrue(organization, shortCode)) {
+                    return ApiResponse.error("Custom short code already exists in this organization");
                 }
 
                 // Validate custom short code format
@@ -69,7 +74,7 @@ public class UrlServiceImpl implements UrlService {
                 }
             } else {
                 // Generate random short code if no custom code provided
-                shortCode = generateUniqueShortCode();
+                shortCode = generateUniqueShortCode(organization);
             }
 
             // Get the next URL ID within the organization
@@ -205,6 +210,30 @@ public class UrlServiceImpl implements UrlService {
     }
 
     @Override
+    public ApiResponse<String> redirectToOriginalUrlByOrgShortNameAndShortCode(String orgShortName, String shortCode) {
+        try {
+            Optional<Organization> orgOpt = organizationService.findByShortName(orgShortName);
+            if (orgOpt.isEmpty()) {
+                return ApiResponse.error("Organization not found");
+            }
+            Organization organization = orgOpt.get();
+            Optional<Url> urlOpt = urlRepository.findByOrganizationAndShortCodeAndActiveTrue(organization, shortCode);
+            if (urlOpt.isEmpty()) {
+                return ApiResponse.error("Short URL not found");
+            }
+            Url url = urlOpt.get();
+            if (url.getExpiresAt() != null && url.getExpiresAt().isBefore(LocalDateTime.now())) {
+                return ApiResponse.error("Short URL has expired");
+            }
+            url.setClickCount(url.getClickCount() + 1);
+            urlRepository.save(url);
+            return ApiResponse.success("Redirect URL found", url.getOriginalUrl());
+        } catch (Exception e) {
+            return ApiResponse.error("Failed to process redirect: " + e.getMessage());
+        }
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public ApiResponse<Page<UrlResponse>> getUrlsByOrganization(Long organizationId, String userEmail, Pageable pageable) {
         try {
@@ -244,7 +273,7 @@ public class UrlServiceImpl implements UrlService {
     @Transactional(readOnly = true)
     public ApiResponse<UrlResponse> getUrlDetails(Long urlId, String userEmail) {
         try {
-            Url url = urlRepository.findById(urlId)
+            Url url = urlRepository.findByIdAndActiveTrue(urlId)
                     .orElseThrow(() -> new RuntimeException("URL not found"));
 
             // Check access permissions
@@ -271,9 +300,8 @@ public class UrlServiceImpl implements UrlService {
                 return ApiResponse.error("Access denied to this URL");
             }
 
-            // Soft delete
-            url.setActive(false);
-            urlRepository.save(url);
+            // Hard delete - completely remove from database
+            urlRepository.delete(url);
 
             return ApiResponse.success("URL deleted successfully", null);
 
@@ -285,7 +313,7 @@ public class UrlServiceImpl implements UrlService {
     @Override
     public ApiResponse<UrlResponse> updateUrl(Long urlId, CreateUrlRequest request, String userEmail) {
         try {
-            Url url = urlRepository.findById(urlId)
+            Url url = urlRepository.findByIdAndActiveTrue(urlId)
                     .orElseThrow(() -> new RuntimeException("URL not found"));
 
             // Check access permissions
@@ -323,9 +351,9 @@ public class UrlServiceImpl implements UrlService {
             if (request.getCustomShortCode() != null && !request.getCustomShortCode().trim().isEmpty()) {
                 String newShortCode = request.getCustomShortCode().trim();
                 if (!newShortCode.equals(url.getShortCode())) {
-                    // Check if new short code already exists
-                    if (urlRepository.existsByShortCode(newShortCode)) {
-                        return ApiResponse.error("Custom short code already exists");
+                    // Check if new short code already exists for this organization (only active URLs)
+                    if (urlRepository.existsByOrganizationAndShortCodeAndActiveTrue(url.getOrganization(), newShortCode)) {
+                        return ApiResponse.error("Custom short code already exists in this organization");
                     }
                     // Validate new short code format
                     if (!isValidShortCode(newShortCode)) {
@@ -360,11 +388,11 @@ public class UrlServiceImpl implements UrlService {
         return count + 1;
     }
 
-    private String generateUniqueShortCode() {
+    private String generateUniqueShortCode(Organization organization) {
         String shortCode;
         do {
             shortCode = generateRandomString();
-        } while (urlRepository.existsByShortCode(shortCode));
+        } while (urlRepository.existsByOrganizationAndShortCodeAndActiveTrue(organization, shortCode));
         return shortCode;
     }
 
@@ -395,7 +423,7 @@ public class UrlServiceImpl implements UrlService {
         response.setOriginalUrl(url.getOriginalUrl());
         response.setShortCode(url.getShortCode() != null ? url.getShortCode() : "");
         // Construct short URL dynamically
-        String shortUrl = baseUrl + "/s/" + url.getShortCode() + "/" + url.getOrganization().getId() + "/" + url.getOrganizationUrlId();
+        String shortUrl = baseUrl + "/s/" + url.getOrganization().getShortName() + "/" + url.getShortCode();
         response.setShortUrl(shortUrl);
         response.setTitle(url.getTitle() != null ? url.getTitle() : "");
         response.setDescription(url.getDescription() != null ? url.getDescription() : "");

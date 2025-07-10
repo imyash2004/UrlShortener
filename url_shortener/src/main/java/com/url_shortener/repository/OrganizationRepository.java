@@ -14,8 +14,10 @@ import java.util.Optional;
 @Repository
 public interface OrganizationRepository extends JpaRepository<Organization, Long> {
     boolean existsByName(String name);
+    boolean existsByShortName(String shortName);
 
     Optional<Organization> findByIdAndActiveTrue(Long id);
+    Optional<Organization> findByShortNameAndActiveTrue(String shortName);
 
     @Query("SELECT o FROM Organization o WHERE o.owner = :user OR o.id IN " +
             "(SELECT uo.organization.id FROM UserOrganization uo WHERE uo.user = :user AND uo.active = true)")

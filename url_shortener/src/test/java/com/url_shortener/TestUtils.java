@@ -29,6 +29,7 @@ public class TestUtils {
         org.setId(1L);
         org.setName("Test Organization");
         org.setDescription("Test Description");
+        org.setShortName("testorg");
         org.setActive(true);
         org.setCreatedAt(LocalDateTime.now());
         org.setOwner(createTestUser());

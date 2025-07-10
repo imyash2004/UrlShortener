@@ -22,6 +22,9 @@ public class Organization {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+    
+    @Column(name = "short_name", nullable = false, unique = true, length = 50)
+    private String shortName;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

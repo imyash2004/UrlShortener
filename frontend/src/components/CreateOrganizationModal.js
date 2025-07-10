@@ -144,6 +144,7 @@ const CreateOrganizationModal = ({
   isRequired = false,
 }) => {
   const [name, setName] = useState("");
+  const [shortName, setShortName] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -156,6 +157,7 @@ const CreateOrganizationModal = ({
     try {
       const response = await organizationService.createOrganization({
         name,
+        shortName,
         description,
       });
 
@@ -211,6 +213,17 @@ const CreateOrganizationModal = ({
             />
           </InputGroup>
           <InputGroup>
+            <Label>Short Name *</Label>
+            <Input
+              type="text"
+              value={shortName}
+              onChange={(e) => setShortName(e.target.value)}
+              required
+              placeholder="e.g. acme"
+              disabled={loading}
+            />
+          </InputGroup>
+          <InputGroup>
             <Label>Description</Label>
             <Textarea
               value={description}
@@ -244,62 +257,6 @@ const CreateOrganizationModal = ({
             )}
             <CreateButton type="submit" disabled={loading}>
               {loading ? "Creating..." : "Create Organization"}
-            </CreateButton>
-          </ButtonGroup>
-        </Form>
-      </ModalContent>
-    </ModalOverlay>
-  );
-};
-
-const CreateUrlModal = ({ onClose, onUrlCreated }) => {
-  const [originalUrl, setOriginalUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const { user } = useContext(AuthContext);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      // Use the first organization by default
-      const organizationId = user.organizations[0].id;
-      const response = await urlService.createUrl({
-        organizationId,
-        originalUrl,
-      });
-      onUrlCreated(response.data);
-      onClose();
-    } catch (err) {
-      setError("Failed to create short URL. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ModalOverlay>
-      <ModalContent>
-        <Title>Create New Short URL</Title>
-        <Form onSubmit={handleSubmit}>
-          <InputGroup>
-            <Label>Original URL</Label>
-            <Input
-              type="url"
-              value={originalUrl}
-              onChange={(e) => setOriginalUrl(e.target.value)}
-              required
-              placeholder="https://example.com"
-            />
-          </InputGroup>
-          {error && <ErrorMsg>{error}</ErrorMsg>}
-          <ButtonGroup>
-            <CancelButton type="button" onClick={onClose} disabled={loading}>
-              Cancel
-            </CancelButton>
-            <CreateButton type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create"}
             </CreateButton>
           </ButtonGroup>
         </Form>

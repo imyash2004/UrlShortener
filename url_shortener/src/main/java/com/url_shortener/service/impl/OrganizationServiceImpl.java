@@ -12,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,22 +27,34 @@ public class OrganizationServiceImpl implements OrganizationService {
     @Override
     public ApiResponse<OrganizationResponse> createOrganization(CreateOrganizationRequest request, String userEmail) {
         try {
+            // Log the request for debugging
+            System.out.println("Creating organization with request: " + request);
+            System.out.println("User email: " + userEmail);
+            
             // Check if organization name already exists
             if (organizationRepository.existsByName(request.getName())) {
+                System.out.println("Organization name already exists: " + request.getName());
                 return ApiResponse.error("Organization name already exists");
+            }
+            // Check if short name already exists
+            if (organizationRepository.existsByShortName(request.getShortName())) {
+                System.out.println("Organization short name already exists: " + request.getShortName());
+                return ApiResponse.error("Organization short name already exists");
             }
 
             // Find user
             User user = userRepository.findByEmail(userEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+                    .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
 
             // Create organization
             Organization organization = new Organization();
             organization.setName(request.getName());
             organization.setDescription(request.getDescription());
             organization.setOwner(user);
+            organization.setShortName(request.getShortName());
 
             Organization savedOrg = organizationRepository.save(organization);
+            System.out.println("Organization created successfully with ID: " + savedOrg.getId());
 
             // Add owner as member with OWNER role
             UserOrganization userOrg = new UserOrganization();
@@ -53,6 +67,8 @@ public class OrganizationServiceImpl implements OrganizationService {
             return ApiResponse.success("Organization created successfully", response);
 
         } catch (Exception e) {
+            System.err.println("Error creating organization: " + e.getMessage());
+            e.printStackTrace();
             return ApiResponse.error("Failed to create organization: " + e.getMessage());
         }
     }
@@ -112,9 +128,15 @@ public class OrganizationServiceImpl implements OrganizationService {
                     organizationRepository.existsByName(request.getName())) {
                 return ApiResponse.error("Organization name already exists");
             }
+            // Check if new short name already exists (excluding current organization)
+            if (!organization.getShortName().equals(request.getShortName()) &&
+                    organizationRepository.existsByShortName(request.getShortName())) {
+                return ApiResponse.error("Organization short name already exists");
+            }
 
             organization.setName(request.getName());
             organization.setDescription(request.getDescription());
+            organization.setShortName(request.getShortName());
 
             Organization savedOrg = organizationRepository.save(organization);
             OrganizationResponse response = mapToResponse(savedOrg);
@@ -177,11 +199,18 @@ public class OrganizationServiceImpl implements OrganizationService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Organization> findByShortName(String shortName) {
+        return organizationRepository.findByShortNameAndActiveTrue(shortName);
+    }
+
     private OrganizationResponse mapToResponse(Organization organization) {
         OrganizationResponse response = new OrganizationResponse();
         response.setId(organization.getId());
         response.setName(organization.getName());
         response.setDescription(organization.getDescription());
+        response.setShortName(organization.getShortName());
         response.setCreatedAt(organization.getCreatedAt());
         response.setActive(organization.isActive());
         response.setOwnerEmail(organization.getOwner().getEmail());

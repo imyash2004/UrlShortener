@@ -45,7 +45,7 @@ const AuthProvider = ({ children }) => {
       setUser(userData);
 
       // Always navigate to dashboard first
-        navigate("/dashboard");
+      navigate("/dashboard");
 
       // The dashboard will handle checking for organizations and showing the modal if needed
       return userData;
@@ -61,8 +61,34 @@ const AuthProvider = ({ children }) => {
     navigate("/login");
   };
 
-  const signup = (firstName, lastName, email, password) => {
-    return authService.signup(firstName, lastName, email, password);
+  const signup = async (firstName, lastName, email, password) => {
+    try {
+      const response = await authService.signup(
+        firstName,
+        lastName,
+        email,
+        password
+      );
+      // The backend always returns 200, so check response.data.success
+      if (response.data && response.data.success) {
+        return { success: true, message: response.data.message };
+      } else {
+        // Business logic error (e.g., email already exists)
+        return {
+          success: false,
+          message: response.data?.message || "Failed to create account.",
+        };
+      }
+    } catch (error) {
+      // Network or unexpected error
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to create account.",
+      };
+    }
   };
 
   // Don't render children until auth is initialized

@@ -11,6 +11,7 @@ public class OrganizationResponse {
     private Long id;
     private String name;
     private String description;
+    private String shortName;
     private LocalDateTime createdAt;
     private boolean active;
     private String ownerEmail;

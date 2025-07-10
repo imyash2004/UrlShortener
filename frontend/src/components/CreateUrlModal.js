@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import styled from "styled-components";
 import urlService from "../services/urlService";
 import organizationService from "../services/organizationService";
@@ -10,8 +10,8 @@ const ModalOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 20, 40, 0.45);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -19,74 +19,74 @@ const ModalOverlay = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(18px);
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: white;
+  padding: 2.5rem;
   border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  padding: 2.5rem 2rem 2rem 2rem;
   width: 100%;
-  max-width: 440px;
-  position: relative;
+  max-width: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
 `;
 
 const Title = styled.h2`
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   color: white;
-  font-size: 1.7rem;
-  font-weight: 700;
+  font-size: 1.8rem;
   text-align: center;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
 `;
 
-const Form = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 1.3rem;
-`;
+const Form = styled.form``;
 
 const InputGroup = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 `;
 
 const Label = styled.label`
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1.05rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
 `;
 
 const Input = styled.input`
   width: 100%;
-  padding: 0.85rem 1rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.13);
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  font-size: 1.05rem;
-  box-sizing: border-box;
-  outline: none;
-  transition: border 0.2s;
+  font-size: 1rem;
+
   &:focus {
-    border: 1.5px solid #4ecdc4;
-    background: rgba(255, 255, 255, 0.18);
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
   }
 `;
 
-const Select = styled.select`
+const Textarea = styled.textarea`
   width: 100%;
-  padding: 0.85rem 1rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.13);
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
   color: white;
-  font-size: 1.05rem;
-  outline: none;
-  transition: border 0.2s;
+  font-size: 1rem;
+  resize: vertical;
+
   &:focus {
-    border: 1.5px solid #4ecdc4;
-    background: rgba(255, 255, 255, 0.18);
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.2);
+  }
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
   }
 `;
 
@@ -94,37 +94,40 @@ const ButtonGroup = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 `;
 
 const Button = styled.button`
-  padding: 0.85rem 1.7rem;
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 15px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1.08rem;
   font-weight: 600;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const CreateButton = styled(Button)`
   background: linear-gradient(45deg, #4ecdc4, #44a08d);
   color: white;
-  box-shadow: 0 4px 15px rgba(76, 205, 196, 0.18);
+
   &:hover:not(:disabled) {
-    background: linear-gradient(45deg, #26c6da, #00acc1);
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(78, 205, 196, 0.3);
   }
 `;
 
 const CancelButton = styled(Button)`
-  background: rgba(255, 255, 255, 0.13);
-  color: #fff;
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.18);
-    color: #44a08d;
-    border: 1.5px solid #44a08d;
+    background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
   }
 `;
@@ -133,20 +136,6 @@ const ErrorMsg = styled.div`
   color: #ff4757;
   margin-bottom: 1rem;
   text-align: center;
-  background: rgba(255, 71, 87, 0.08);
-  border-radius: 8px;
-  border: 1px solid #ffcccc;
-  padding: 0.7rem 1rem;
-`;
-
-const SuccessMsg = styled.div`
-  color: #44a08d;
-  margin-bottom: 1rem;
-  text-align: center;
-  padding: 0.5rem;
-  background-color: #e6f7f0;
-  border-radius: 4px;
-  border: 1px solid #b3e6cc;
 `;
 
 const CreateUrlModal = ({ onClose, onUrlCreated }) => {
@@ -155,34 +144,29 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  const [organizationId, setOrganizationId] = useState("");
+  const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
-  const [organizations, setOrganizations] = useState([]);
-  const [selectedOrganization, setSelectedOrganization] = useState("");
-  const [loadingOrgs, setLoadingOrgs] = useState(true);
   const { user } = useContext(AuthContext);
 
-  // Fetch user's organizations when component mounts
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchOrganizations = async () => {
       try {
-        setLoadingOrgs(true);
         const response = await organizationService.getUserOrganizations();
-        if (response && response.success && response.data) {
-          setOrganizations(response.data.content || []);
-          // Auto-select first organization if available
-          if (response.data.content && response.data.content.length > 0) {
-            setSelectedOrganization(response.data.content[0].id);
+        if (response && response.success) {
+          // The backend returns a Page object, so we need to access the content array
+          const organizationsData = response.data.content || response.data;
+          setOrganizations(organizationsData);
+          if (organizationsData && organizationsData.length > 0) {
+            setOrganizationId(organizationsData[0].id);
           }
         }
       } catch (error) {
-        console.error("Error fetching organizations:", error);
-        setError("Failed to load organizations. Please try again.");
-      } finally {
-        setLoadingOrgs(false);
+        console.error("Failed to fetch organizations", error);
       }
     };
+
     fetchOrganizations();
   }, []);
 
@@ -190,54 +174,18 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(null);
-
-    // Validate required fields
-    if (!originalUrl.trim()) {
-      setError("Original URL is required");
-      setLoading(false);
-      return;
-    }
-
-    if (!selectedOrganization) {
-      setError("Please select an organization");
-      setLoading(false);
-      return;
-    }
-
-    // Validate URL format
     try {
-      new URL(originalUrl.trim());
-    } catch {
-      setError("Please enter a valid URL (e.g., https://example.com)");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const payload = {
-        organizationId: parseInt(selectedOrganization),
-        originalUrl: originalUrl.trim(),
-      };
-
-      if (customShortCode.trim())
-        payload.customShortCode = customShortCode.trim();
-      if (title.trim()) payload.title = title.trim();
-      if (description.trim()) payload.description = description.trim();
-      if (expiresAt) payload.expiresAt = expiresAt;
-
-      console.log("Creating URL with payload:", payload);
-
-      const response = await urlService.createUrl(payload);
-
-      if (response && response.success) {
-        onUrlCreated(response.data);
-        onClose();
-      } else {
-        setError(response?.message || "Failed to create short URL");
-      }
+      const response = await urlService.createUrl({
+        organizationId,
+        originalUrl,
+        customShortCode,
+        title,
+        description,
+        expiresAt: expiresAt || null,
+      });
+      onUrlCreated(response.data);
+      onClose();
     } catch (err) {
-      console.error("Error creating URL:", err);
       setError(
         err.response?.data?.message ||
           "Failed to create short URL. Please try again."
@@ -249,28 +197,38 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
 
   return (
     <ModalOverlay>
-      <ModalContent>
+      <ModalContent
+        style={{ maxHeight: "90vh", overflowY: "auto", margin: "2rem 0" }}
+      >
         <Title>Create New Short URL</Title>
         <Form onSubmit={handleSubmit}>
           <InputGroup>
             <Label>Organization *</Label>
-            <Select
-              value={selectedOrganization}
-              onChange={(e) => setSelectedOrganization(e.target.value)}
+            <select
+              value={organizationId}
+              onChange={(e) => setOrganizationId(e.target.value)}
               required
-              disabled={loadingOrgs}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                borderRadius: "8px",
+                background: "rgba(255, 255, 255, 0.1)",
+                color: "white",
+                fontSize: "1rem",
+              }}
             >
-              <option value="">
-                {loadingOrgs
-                  ? "Loading organizations..."
-                  : "Select an organization"}
-              </option>
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.name}
-                </option>
-              ))}
-            </Select>
+              {Array.isArray(organizations) &&
+                organizations.map((org) => (
+                  <option
+                    key={org.id}
+                    value={org.id}
+                    style={{ color: "black" }}
+                  >
+                    {org.name}
+                  </option>
+                ))}
+            </select>
           </InputGroup>
           <InputGroup>
             <Label>Original URL *</Label>
@@ -288,8 +246,7 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
               type="text"
               value={customShortCode}
               onChange={(e) => setCustomShortCode(e.target.value)}
-              placeholder="my-custom-code"
-              maxLength={50}
+              placeholder="e.g. my-custom-link"
             />
           </InputGroup>
           <InputGroup>
@@ -299,17 +256,15 @@ const CreateUrlModal = ({ onClose, onUrlCreated }) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="My URL Title"
-              maxLength={255}
             />
           </InputGroup>
           <InputGroup>
             <Label>Description (optional)</Label>
-            <Input
-              type="text"
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="URL description"
-              maxLength={500}
+              rows={3}
             />
           </InputGroup>
           <InputGroup>

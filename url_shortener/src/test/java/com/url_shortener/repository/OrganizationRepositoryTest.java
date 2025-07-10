@@ -50,9 +50,11 @@ class OrganizationRepositoryTest {
         testOrganization = new Organization();
         testOrganization.setName("Test Organization");
         testOrganization.setDescription("Test Description");
+        testOrganization.setShortName("testorg");
         testOrganization.setOwner(testUser);
         testOrganization.setActive(true);
         testOrganization.setCreatedAt(LocalDateTime.now());
+        testOrganization = entityManager.persistAndFlush(testOrganization);
     }
 
     @Test
@@ -134,6 +136,7 @@ class OrganizationRepositoryTest {
         Organization secondOrg = new Organization();
         secondOrg.setName("Second Organization");
         secondOrg.setDescription("Second Description");
+        secondOrg.setShortName("secondorg2");
         secondOrg.setOwner(testUser);
         secondOrg.setActive(true);
         secondOrg.setCreatedAt(LocalDateTime.now());
@@ -185,6 +188,7 @@ class OrganizationRepositoryTest {
         Organization anotherOrg = new Organization();
         anotherOrg.setName("Another Organization");
         anotherOrg.setDescription("Another Description");
+        anotherOrg.setShortName("anotherorg");
         anotherOrg.setOwner(anotherUser);
         anotherOrg.setActive(true);
         anotherOrg.setCreatedAt(LocalDateTime.now());

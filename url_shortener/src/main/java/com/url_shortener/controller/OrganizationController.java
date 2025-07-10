@@ -13,12 +13,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/organizations")
 @RequiredArgsConstructor
 public class OrganizationController {
 
+    private static final Logger logger = LoggerFactory.getLogger(OrganizationController.class);
     private final OrganizationService organizationService;
 
     @PostMapping
@@ -26,8 +31,12 @@ public class OrganizationController {
             @Valid @RequestBody CreateOrganizationRequest request,
             Authentication authentication) {
 
+        logger.info("Received organization creation request: {}", request);
         String userEmail = authentication.getName();
+        logger.info("User email: {}", userEmail);
+        
         ApiResponse<OrganizationResponse> response = organizationService.createOrganization(request, userEmail);
+        logger.info("Organization creation response: {}", response);
 
         return response.isSuccess() ?
                 ResponseEntity.ok(response) :
@@ -97,5 +106,19 @@ public class OrganizationController {
         return response.isSuccess() ?
                 ResponseEntity.ok(response) :
                 ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<String>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+        
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation failed");
+        
+        logger.error("Validation error: {}", errorMessage);
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(errorMessage));
     }
 }
